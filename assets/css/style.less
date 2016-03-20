@@ -1,0 +1,42 @@
+html {
+  body {
+    font-family:'Segoe UI', 'Tahoma', 'Hannari Mincho', 'Meiryo', 'MS P Gothic', 'Malgun Gothic', 'Gulim';
+    
+    iframe#hIframe {
+      display:none;
+    }
+  }
+}
+
+/* loop default */
+.mp-loop(0,5,100);
+
+.mp-loop(@start,@step,@max) when (@start =< @max) {
+  .mt@{start} {
+    margin-top:(@start * 1px);
+  }
+  .mr@{start} {
+    margin-right:(@start * 1px);
+  }
+  .mb@{start} {
+    margin-bottom:(@start * 1px);
+  }
+  .ml@{start} {
+    margin-left:(@start * 1px);
+  }
+  
+  .pt@{start} {
+    padding-top:(@start * 1px);
+  }
+  .pr@{start} {
+    padding-right:(@start * 1px);
+  }
+  .pb@{start} {
+    padding-bottom:(@start * 1px);
+  }
+  .pl@{start} {
+    padding-left:(@start * 1px);
+  }
+  
+  .mp-loop((@start + @step),@step,@max);
+}
