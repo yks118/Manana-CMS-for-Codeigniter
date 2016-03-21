@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<?php echo doctype('html5'); ?>
 <html lang="<?php echo $site_lang; ?>">
 	<head>
 		<!-- META -->

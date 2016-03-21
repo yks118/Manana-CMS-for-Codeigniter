@@ -4,6 +4,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class manana {
 	// codeigniter
 	private $CI;
+	private $site_lang;
+	
+	/**
+	 * pre_controller
+	 * 
+	 * 컨트롤러가 호출되기 직전입니다.
+	 */
+	public function pre_controller () {
+		// 언어 설정
+		$this->_language($GLOBALS['CFG']->config['language']);
+	}
 	
 	/**
 	 * post_controller_constructor
@@ -29,9 +40,71 @@ class manana {
 		global $OUT;
 		$output = $this->CI->output->get_output();
 		
-		$this->CI->model->config->layout = $output;
-		$output = $this->CI->load->view('html',$this->CI->model->config,TRUE);
+		$this->CI->model->html->site_lang = $this->site_lang;
+		$this->CI->model->html->layout = $output;
+		$output = $this->CI->load->view('html',$this->CI->model->html,TRUE);
 		
 		$OUT->_display($output);
+	}
+	
+	/**
+	 * _language
+	 * 
+	 * 사이트 언어 설정
+	 * 
+	 * @param	string	$config_language	korean / japanese / english
+	 */
+	private function _language ($config_language) {
+		$language = 'english';
+		$cookie_prefix = $GLOBALS['CFG']->config['cookie_prefix'];
+		
+		if (isset($_COOKIE[$cookie_prefix.'language'])) {
+			// 언어 설정이 존재
+			$language = $_COOKIE[$cookie_prefix.'language'];
+			
+			switch ($language) {
+				case 'korean' : $this->site_lang = 'ko-KR'; break;
+				case 'japanese' : $this->site_lang = 'ja-JP'; break;
+				default : $this->site_lang = 'en-US'; break;
+			}
+		} else {
+			// 언어 설정이 존재하지 않음
+			$languages = array('ko-KR','ko','ja-JP','ja');
+			
+			preg_match_all('/([^;]+);([^,]+),?/i',$_SERVER['HTTP_ACCEPT_LANGUAGE'],$match);
+			
+			if (isset($match[1][0])) {
+				// ko-KR,ko;q=0.8,en-US;q=0.5,en;q=0.3
+				foreach ($match[1] as $value) {
+					$http_accept_language = explode(',',$value);
+					
+					if (in_array($http_accept_language[0],$languages)) {
+						$this->site_lang = $http_accept_language[0];
+						break;
+					}
+				}
+			} else {
+				// ko-KR
+				if (in_array($_SERVER['HTTP_ACCEPT_LANGUAGE'],$languages)) {
+					$this->site_lang = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+				}
+			}
+			
+			switch ($this->site_lang) {
+				case 'ko' :
+				case 'ko-KR' :
+						$language = 'korean';
+					break;
+				case 'ja' :
+				case 'ja-JP' :
+						$language = 'japanese';
+					break;
+				default :
+						$language = 'english';
+					break;
+			}
+		}
+		
+		$GLOBALS['CFG']->config['language'] = $language;
 	}
 }

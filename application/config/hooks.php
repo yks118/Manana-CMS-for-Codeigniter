@@ -12,6 +12,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 
+$hook['pre_controller'][] = array(
+	'class'=>'manana',
+	'function'=>'pre_controller',
+	'filename'=>'manana.php',
+	'filepath'=>'hooks'
+);
+
 $hook['post_controller_constructor'][] = array(
 	'class'=>'manana',
 	'function'=>'post_controller_constructor',
