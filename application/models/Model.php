@@ -145,9 +145,9 @@ class Model extends CI_Model {
 		
 		$site_data = $site_member_grade_data = array();
 		foreach ($data as $key => $value) {
-			if (strpos($key,'site_member_grade_') == 0) {
+			if (strpos($key,'site_member_grade_') !== FALSE && strpos($key,'site_member_grade_') == 0) {
 				$site_member_grade_data[str_replace('site_member_grade_','',$key)] = $value;
-			} else if (strpos($key,'site_') == 0) {
+			} else if (strpos($key,'site_') !== FALSE && strpos($key,'site_') == 0) {
 				$site_data[str_replace('site_','',$key)] = $value;
 			}
 		}

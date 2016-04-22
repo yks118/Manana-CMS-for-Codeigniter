@@ -61,9 +61,9 @@ class Member_model extends CI_Model {
 		
 		$member_data = $member_information_data = array();
 		foreach ($data as $key => $value) {
-			if (strpos($key,'member_information_') == 0) {
+			if (strpos($key,'member_information_') !== FALSE && strpos($key,'member_information_') == 0) {
 				$member_information_data[str_replace('member_information_','',$key)] = $value;
-			} else if (strpos($key,'member_') == 0) {
+			} else if (strpos($key,'member_') !== FALSE && strpos($key,'member_') == 0) {
 				$member_data[str_replace('member_','',$key)] = $value;
 			}
 		}

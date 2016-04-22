@@ -12,7 +12,7 @@
 				
 				<div class="form-group">
 					<label for="site_url">Site Url</label>
-					<input type="text" class="form-control" id="site_url" name="site_url" value="<?php echo $_SERVER['HTTP_HOST']; ?>" maxlength="255" required="required" />
+					<input type="text" class="form-control" id="site_url" name="site_url" value="<?php echo $_SERVER['HTTP_HOST']; ?>" maxlength="255" required="required" readonly="readonly" />
 				</div>
 				
 				<div class="form-group">
@@ -61,12 +61,12 @@
 				
 				<div class="radio">
 					<label class="radio-inline">
-						<input type="radio" id="site_login_username" name="site_login_username" value="username" checked="checked" />
+						<input type="radio" id="site_login_username" name="site_login" value="username" checked="checked" />
 						<?php echo lang('site_login_username'); ?>
 					</label>
 					
 					<label class="radio-inline">
-						<input type="radio" id="site_login_email" name="site_login_email" value="email" />
+						<input type="radio" id="site_login_email" name="site_login" value="email" />
 						<?php echo lang('site_login_email'); ?>
 					</label>
 				</div>
