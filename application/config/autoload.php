@@ -89,7 +89,7 @@ $autoload['drivers'] = array();
 |
 |	$autoload['helper'] = array('url', 'file');
 */
-$autoload['helper'] = array('manana','url','language','form','html');
+$autoload['helper'] = array('manana','url','language','form','html','cookie');
 
 /*
 | -------------------------------------------------------------------
@@ -132,4 +132,4 @@ $autoload['language'] = array('common');
 |
 |	$autoload['model'] = array('first_model' => 'first');
 */
-$autoload['model'] = array('model');
+$autoload['model'] = array('model','member_model'=>'member');

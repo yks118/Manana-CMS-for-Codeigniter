@@ -10,7 +10,10 @@
 				echo form_open_multipart(base_url('/install/writeSite/'),$attributes);
 				?>
 				
-				<input type="hidden" id="site_language" name="site_language" value="<?php echo $this->config->item('language'); ?>" />
+				<div class="form-group">
+					<label for="site_url">Site Url</label>
+					<input type="text" class="form-control" id="site_url" name="site_url" value="<?php echo $_SERVER['HTTP_HOST']; ?>" maxlength="255" required="required" />
+				</div>
 				
 				<div class="form-group">
 					<label for="site_name"><?php echo lang('site_name'); ?></label>
@@ -46,13 +49,25 @@
 				
 				<div class="radio">
 					<label class="radio-inline">
-						<input type="radio" id="site_robots_true" name="site_robots_true" value="t" checked="checked" />
+						<input type="radio" id="site_robots_true" name="site_robots" value="t" checked="checked" />
 						<?php echo lang('site_robots_true'); ?>
 					</label>
 					
 					<label class="radio-inline">
-						<input type="radio" id="site_robots_false" name="site_robots_false" value="f" />
+						<input type="radio" id="site_robots_false" name="site_robots" value="f" />
 						<?php echo lang('site_robots_false'); ?>
+					</label>
+				</div>
+				
+				<div class="radio">
+					<label class="radio-inline">
+						<input type="radio" id="site_login_username" name="site_login_username" value="username" checked="checked" />
+						<?php echo lang('site_login_username'); ?>
+					</label>
+					
+					<label class="radio-inline">
+						<input type="radio" id="site_login_email" name="site_login_email" value="email" />
+						<?php echo lang('site_login_email'); ?>
 					</label>
 				</div>
 				
