@@ -11,7 +11,7 @@ class Model extends CI_Model {
 	public function __construct() {
 		parent::__construct();
 		
-		if ($this->uri->segment(1) != 'install') {
+		if ($this->db->table_exists('site')) {
 			$this->site = $this->read_site_url(base_url('/'));
 		}
 		
@@ -32,12 +32,14 @@ class Model extends CI_Model {
 		$this->html['site_title'] = 'Manana CMS';
 		
 		// css setting
-		$this->css('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
+		$this->css('//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css');
+		$this->css('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
 		$this->css($this->path.'/css/style.less');
 		
 		// js setting
-		$this->js('https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js','header');
-		$this->js('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js','footer');
+		$this->js('//ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js','header');
+		$this->js('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js','footer');
+		$this->js($this->path.'/js/bootstrap-notify/bootstrap-notify.js','footer');
 		$this->js($this->path.'/js/common.js','footer');
 	}
 	
@@ -92,7 +94,7 @@ class Model extends CI_Model {
 		// get DB
 		$this->db->select('*');
 		$this->db->from('site');
-		$this->db->like('site_url',$url,'both');
+		$this->db->like('url',$url,'both');
 		$this->db->limit(1);
 		return $this->db->get()->row();
 	}

@@ -1,6 +1,9 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+// system
+$lang['system_connect_danger'] = '잘못된 접근입니다.';
+
 // text
 $lang['text_submit'] = '확인';
 

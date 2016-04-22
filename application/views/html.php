@@ -24,7 +24,7 @@
 		<?php echo $layout; ?>
 		
 		<!-- HIDDEN FRAME -->
-		<iframe id="hIframe" name="hIframe"></iframe>
+		<iframe id="hIframe" name="hIframe" src="<?php echo base_url('/manana/notify/'); ?>"></iframe>
 		
 		<!-- javascript -->
 		<?php foreach ($this->model->js['footer'] as $path) { ?>
