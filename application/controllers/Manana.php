@@ -22,4 +22,21 @@ class Manana extends CI_Controller {
 			echo notify($message,$type,TRUE);
 		}
 	}
+	
+	/**
+	 * csrf
+	 * 
+	 * csrf를 갱신..
+	 */
+	public function csrf () {
+		$js = '
+		var csrf = parent.document.getElementsByName("'.$this->security->get_csrf_token_name().'");
+		
+		for (var i = 0; i < csrf.length; i++) {
+			csrf[i].value = "'.$this->security->get_csrf_hash().'";
+		}
+		';
+		
+		echo js($js);
+	}
 }

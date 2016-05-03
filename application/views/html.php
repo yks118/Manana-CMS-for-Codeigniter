@@ -19,6 +19,12 @@
 		<?php foreach ($this->model->js['header'] as $path) { ?>
 		<script type="text/javascript" charset="UTF-8" src="<?php echo $path; ?>"></script>
 		<?php } ?>
+		
+		<!-- Default Setting -->
+		<script type="text/javascript" charset="UTF-8">
+		var prefix = "<?php echo $this->config->item('cookie_prefix'); ?>";
+		var site_url = "<?php echo $this->model->site['url']; ?>";
+		</script>
 	</head>
 	<body>
 		<?php echo $layout; ?>

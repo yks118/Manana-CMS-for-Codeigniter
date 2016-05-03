@@ -3,6 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 // system
 $lang['system_connect_danger'] = '잘못된 접근입니다.';
+$lang['system_auth_danger'] = '권한이 존재하지 않습니다.';
 
 // text
 $lang['text_submit'] = '확인';
@@ -26,6 +27,10 @@ $lang['member_password'] = '비밀번호';
 $lang['member_name'] = '닉네임';
 $lang['member_email'] = '이메일';
 $lang['member_write_success'] = '회원가입에 성공하였습니다.';
-$lang['member_login_required'] = '로그인이 필요합니다.';
 $lang['member_grade_normal'] = '회원';
 $lang['member_grade_admin'] = '운영자';
+$lang['member_login'] = '로그인';
+$lang['member_login_required'] = '로그인이 필요합니다.';
+$lang['member_login_success'] = '로그인에 성공하였습니다.';
+$lang['member_login_danger'] = '로그인에 실패하였습니다.';
+$lang['member_join'] = '회원가입';

@@ -13,9 +13,23 @@ class Install extends CI_Controller {
 		} else if (!$this->db->table_exists('member')) {
 			// member 설정
 			$this->load->view('install/member');
-		} else if (!$this->db->table_exists('site')) {
-			// site 설정
-			$this->load->view('install/site');
+		} else if (isset($this->model->site['id']) === FALSE) {
+			$site_total = ($this->db->table_exists('site'))?$this->model->read_total():0;
+			
+			if (
+				empty($site_total) ||
+				(
+					$site_total && isset($this->member->data['id'])
+				)
+			) {
+				// site 설정
+				$this->load->view('install/site');
+			} else {
+				// 첫 사이트 생성이 아니라면, 로그인이 필요..
+				set_cookie('noti',lang('member_login_required'),0);
+				set_cookie('noti_type','danger',0);
+				redirect('/member/login/');
+			}
 		} else {
 			// install complete
 			$this->load->view('install/complete');
@@ -45,7 +59,7 @@ class Install extends CI_Controller {
 			echo js('parent.document.location.href = "'.base_url('/install/').'";');
 		} else {
 			// error
-			echo notify($result['message'],'error',TRUE);
+			echo notify($result['message'],'danger',TRUE);
 		}
 	}
 	
@@ -72,7 +86,7 @@ class Install extends CI_Controller {
 			echo js('parent.document.location.href = "'.base_url('/install/').'";');
 		} else {
 			// error
-			echo notify($result['message'],'error',TRUE);
+			echo notify($result['message'],'danger',TRUE);
 		}
 	}
 }

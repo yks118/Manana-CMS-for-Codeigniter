@@ -36,8 +36,8 @@ function js ($text) {
  */
 function notify ($message,$type = 'success',$parent = TRUE) {
 	if ($parent) {
-		return js('parent.notify("'.$message.'","'.$type.'")');
+		return js('parent.notify("'.$message.'","'.$type.'");');
 	} else {
-		return js('notify("'.$message.'","'.$type.'")');
+		return js('notify("'.$message.'","'.$type.'");');
 	}
 }

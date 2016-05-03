@@ -40,9 +40,22 @@ class manana {
 		global $OUT;
 		$output = $this->CI->output->get_output();
 		
-		$this->CI->model->html['site_lang'] = $this->site_lang;
-		$this->CI->model->html['layout'] = $output;
-		$output = $this->CI->load->view('html',$this->CI->model->html,TRUE);
+		// json check
+		$json = json_decode($output);
+		if (json_last_error() === JSON_ERROR_NONE) {
+			// json
+			
+			// set csrf
+			$json[$this->CI->security->get_csrf_token_name()] = $this->CI->security->get_csrf_hash();
+			
+			// encode json
+			$output = json_encode($json);
+		} else {
+			// html
+			$this->CI->model->html['site_lang'] = $this->site_lang;
+			$this->CI->model->html['layout'] = $output;
+			$output = $this->CI->load->view('html',$this->CI->model->html,TRUE);
+		}
 		
 		$OUT->_display($output);
 	}

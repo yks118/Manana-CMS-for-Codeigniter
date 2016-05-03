@@ -34,6 +34,7 @@ class Model extends CI_Model {
 		// css setting
 		$this->css('//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css');
 		$this->css('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
+		$this->css('//maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css');
 		$this->css($this->path.'/css/style.less');
 		
 		// js setting
@@ -96,7 +97,7 @@ class Model extends CI_Model {
 		$this->db->from('site');
 		$this->db->like('url',$url,'both');
 		$this->db->limit(1);
-		return $this->db->get()->row();
+		return $this->db->get()->row_array();
 	}
 	
 	/**
@@ -111,12 +112,21 @@ class Model extends CI_Model {
 		$data = array();
 		
 		foreach ($this->input->post() as $key => $value) {
-			if (strpos($key,$prefix) == 0 && ($id && $key != $id)) {
+			if ($key && (strpos($key,$prefix) !== FALSE && strpos($key,$prefix) == 0) && ($key != $id)) {
 				$data[$key] = $value;
 			}
 		}
 		
 		return $data;
+	}
+	
+	/**
+	 * read_total
+	 * 
+	 * site table rows
+	 */
+	public function read_total () {
+		return $this->db->count_all('site');
 	}
 	
 	/**

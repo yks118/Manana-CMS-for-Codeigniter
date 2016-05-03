@@ -3,12 +3,16 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Member_model extends CI_Model {
 	public $data = array();
+	public $skin = 'basic';
 	
 	public function __construct() {
 		parent::__construct();
 		
 		// member password library
 		$this->load->library('encrypt');
+		
+		// set member data
+		$this->data = $this->read_id($this->session->userdata('member_id'));
 	}
 	
 	/**
@@ -34,12 +38,114 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
+	 * login
+	 * 
+	 * 로그인 처리
+	 * 
+	 * @param	string		$username		ci_member.username
+	 * @param	string		$password		ci_member.password
+	 */
+	public function login ($username,$password) {
+		$result = $log_data = array();
+		$member = $this->read_username($username);
+		
+		// login_log check
+		$this->db->select('*');
+		$this->db->from('login_log');
+		$this->db->where('write_datetime >=',date('Y-m-d H:i:s',strtotime('-5 minute')));
+		$count = $this->db->count_all_results();
+		
+		// default setting ci_login_log data
+		$log_data['member_id'] = 0;
+		$log_data['ip'] = $this->input->ip_address();
+		$log_data['status'] = 'f';
+		$log_data['write_datetime'] = date('Y-m-d H:i:s');
+		
+		if (isset($member['id'])) {
+			$log_data['member_id'] = $member['id'];
+			
+			if ($password == $this->_decode($member['password']) && $count <= 5) {
+				$log_data['status'] = 't';
+				
+				// set session
+				$this->session->set_userdata('member_id',$member['id']);
+				
+				$result['status'] = TRUE;
+				$result['message'] = lang('member_login_success');
+			} else {
+				$result['status'] = FALSE;
+				$result['message'] = lang('member_login_danger');
+			}
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = lang('member_login_danger');
+		}
+		
+		// insert ci_login_log data
+		$this->db->insert('login_log',$log_data);
+		
+		return $result;
+	}
+	
+	/**
+	 * read_id
+	 * 
+	 * id로 ci_member 테이블 검색
+	 * 
+	 * @param	numberic	$id		ci_member.id
+	 */
+	public function read_id ($id) {
+		$this->db->select('*');
+		$this->db->from('member');
+		$this->db->where('id',$id);
+		$this->db->limit(1);
+		return $this->db->get()->row_array();
+	}
+	
+	/**
+	 * read_username
+	 * 
+	 * username로 ci_member 테이블 검색
+	 * 
+	 * @param	string		$username		ci_member.username
+	 */
+	public function read_username ($username) {
+		$this->db->select('*');
+		$this->db->from('member');
+		$this->db->where('username',$username);
+		$this->db->limit(1);
+		return $this->db->get()->row_array();
+	}
+	
+	/**
 	 * read_total
 	 * 
 	 * member table rows
 	 */
 	public function read_total () {
 		return $this->db->count_all('member');
+	}
+	
+	/**
+	 * check_admin
+	 * 
+	 * 운영자인지 체크
+	 * 
+	 * @param	numberic	$id		ci_member.id
+	 */
+	public function check_admin ($id = 0) {
+		$result = FALSE;
+		
+		if (isset($this->data['id']) && empty($id)) {
+			// $id가 설정되어있지 않은데, 로그인이 되어있다면 로그인 유저의 권한을 체크..
+			$id = $this->data['id'];
+		}
+		
+		if ($id) {
+			
+		}
+		
+		return $result;
 	}
 	
 	/**
@@ -185,7 +291,37 @@ class Member_model extends CI_Model {
 		);
 		$this->dbforge->add_field($fields);
 		$this->dbforge->add_key('id',TRUE);
-		$return = $this->dbforge->create_table('member_information');
+		$this->dbforge->create_table('member_information');
+		
+		// login log table
+		$fields = array(
+			'id'=>array(
+				'type'=>'INT',
+				'constraint'=>11,
+				'unsigned'=>TRUE,
+				'auto_increment'=>TRUE
+			),
+			'member_id'=>array(
+				'type'=>'INT',
+				'constraint'=>11,
+				'unsigned'=>TRUE
+			),
+			'ip'=>array(
+				'type'=>'VARCHAR',
+				'constraint'=>45
+			),
+			'status'=>array(
+				'type'=>'VARCHAR',
+				'constraint'=>1
+			),
+			'write_datetime'=>array(
+				'type'=>'DATETIME',
+				'default'=>'0000-00-00 00:00:00'
+			)
+		);
+		$this->dbforge->add_field($fields);
+		$this->dbforge->add_key('id',TRUE);
+		$this->dbforge->create_table('login_log');
 		
 		return $return;
 	}
