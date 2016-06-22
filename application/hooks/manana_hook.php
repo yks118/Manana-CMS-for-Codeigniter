@@ -1,10 +1,19 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class manana {
+class manana_hook {
 	// codeigniter
 	private $CI;
 	private $site_lang;
+	
+	/**
+	 * pre_system
+	 * 
+	 * 시스템 작동초기입니다.
+	 */
+	public function pre_system () {
+		
+	}
 	
 	/**
 	 * pre_controller
@@ -28,6 +37,43 @@ class manana {
 		if (!$this->CI->db->database && ($this->CI->uri->segment(1) != 'install')) {
 			// 설치 페이지로 리다이렉트
 			redirect('/install/');
+		} else if ($this->CI->uri->segment(1) == 'admin') {
+			// check site admin
+			if ($this->CI->member->check_admin()) {
+				// set admin layout
+				$this->CI->model->layout = 'admin';
+				
+				// set admin menu
+				$this->_read_admin_menu();
+				
+				if (isset($this->CI->model->menu[$this->CI->uri->segment(2)]['name'])) {
+					$this->CI->model->html['site_title'] = $this->CI->model->menu[$this->CI->uri->segment(2)]['name'].' :: '.$this->CI->model->html['site_title'];
+				}
+			} else {
+				set_cookie('noti',lang('system_auth_danger'),0);
+				set_cookie('noti_type','danger',0);
+				redirect('/');
+			}
+		}
+	}
+	
+	/**
+	 * _read_admin_menu
+	 * 
+	 * set admin menu
+	 */
+	private function _read_admin_menu () {
+		$list = read_file_list('./application/models/',array('php'));
+		
+		foreach ($list as $key => $value) {
+			$class = strtolower(str_replace('.php','',$value));
+			$model = strtolower(str_replace(array('_model.php','.php'),'',$value));
+			
+			$this->CI->load->model(array($class=>$model));
+			
+			if (isset($this->CI->$model->menu) && $model != 'model') {
+				$this->CI->model->menu[$model] = $this->CI->$model->menu[$model];
+			}
 		}
 	}
 	
@@ -53,7 +99,16 @@ class manana {
 		} else {
 			// html
 			$this->CI->model->html['site_lang'] = $this->site_lang;
-			$this->CI->model->html['layout'] = $output;
+			
+			if (empty($this->CI->model->layout)) {
+				$this->CI->model->html['layout'] = $output;
+			} else {
+				$data = array();
+				$data['page'] = $output;
+				$data['path'] = base_url('/assets/views/layout/'.$this->CI->model->layout);
+				$this->CI->model->html['layout'] = $this->CI->load->view('layout/'.$this->CI->model->layout.'/layout',$data,TRUE);
+			}
+			
 			$output = $this->CI->load->view('html',$this->CI->model->html,TRUE);
 		}
 		

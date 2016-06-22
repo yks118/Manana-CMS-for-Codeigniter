@@ -4,6 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Member_model extends CI_Model {
 	public $data = array();
 	public $skin = 'basic';
+	public $menu = array();
 	
 	public function __construct() {
 		parent::__construct();
@@ -13,6 +14,12 @@ class Member_model extends CI_Model {
 		
 		// set member data
 		$this->data = $this->read_id($this->session->userdata('member_id'));
+		
+		if ($this->uri->segment(1) == 'admin') {
+			$this->menu['member']['name'] = lang('admin_menu_member');
+			$this->menu['member']['href'] = base_url('/admin/member/');
+			$this->menu['member']['target'] = '_self';
+		}
 	}
 	
 	/**
@@ -95,9 +102,12 @@ class Member_model extends CI_Model {
 	 * @param	numberic	$id		ci_member.id
 	 */
 	public function read_id ($id) {
-		$this->db->select('*');
-		$this->db->from('member');
-		$this->db->where('id',$id);
+		$this->db->select('m.*, mi.description, smg.name AS grade');
+		$this->db->from('member m');
+		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
+		$this->db->join('site_member_grade smg','mi.site_member_grade_id = smg.id','LEFT');
+		$this->db->where('mi.site_id',$this->model->site['id']);
+		$this->db->where('m.id',$id);
 		$this->db->limit(1);
 		return $this->db->get()->row_array();
 	}
@@ -110,9 +120,12 @@ class Member_model extends CI_Model {
 	 * @param	string		$username		ci_member.username
 	 */
 	public function read_username ($username) {
-		$this->db->select('*');
-		$this->db->from('member');
-		$this->db->where('username',$username);
+		$this->db->select('m.*, mi.description, smg.name AS grade');
+		$this->db->from('member m');
+		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
+		$this->db->join('site_member_grade smg','mi.site_member_grade_id = smg.id','LEFT');
+		$this->db->where('mi.site_id',$this->model->site['id']);
+		$this->db->where('m.username',$username);
 		$this->db->limit(1);
 		return $this->db->get()->row_array();
 	}
@@ -127,13 +140,73 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
+	 * read_list
+	 * 
+	 * member table list
+	 * 
+	 * @param	array	$data
+	 */
+	public function read_list ($data) {
+		// get list
+		$this->db->select('*');
+		$this->db->from('member m');
+		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
+		$this->db->join('site_member_grade smg','mi.site_member_grade_id = smg.id','LEFT');
+		$this->db->where('mi.site_id',$this->model->site['id']);
+		
+		if (isset($data['order_by']) && isset($data['order_by_sort'])) {
+			$this->db->order_by($data['order_by'],$data['order_by_sort']);
+		} else {
+			$this->db->order_by('member_id','DESC');
+		}
+		
+		if (isset($data['limit'])) {
+			$this->db->limit($data['limit']);
+		}
+		
+		if (isset($data['offset'])) {
+			$this->db->offset($data['offset']);
+		}
+	}
+	
+	/**
+	 * read_grade_list
+	 * 
+	 * 사이트의 회원등급 리스트를 리턴
+	 */
+	public function read_grade_list () {
+		$list = array();
+		$language = $this->config->item('language');
+		
+		// get DB
+		$this->db->select();
+		$this->db->from('site_member_grade');
+		$this->db->order_by('site_member_grade_id','ASC');
+		$this->db->order_by('id','ASC');
+		$query = $this->db->get();
+		
+		foreach ($query->result_array() as $row) {
+			$list[$row['language']][] = $row;
+		}
+		
+		if (isset($list[$language])) {
+			$list = $list[$language];
+		} else {
+			$list = $list[key($list)];
+		}
+		
+		return $list;
+	}
+	
+	/**
 	 * check_admin
 	 * 
 	 * 운영자인지 체크
 	 * 
-	 * @param	numberic	$id		ci_member.id
+	 * @param	numberic	$id			ci_member.id
+	 * @param	numberic	$site_id	ci_site.id
 	 */
-	public function check_admin ($id = 0) {
+	public function check_admin ($id = 0,$site_id = 0) {
 		$result = FALSE;
 		
 		if (isset($this->data['id']) && empty($id)) {
@@ -141,8 +214,31 @@ class Member_model extends CI_Model {
 			$id = $this->data['id'];
 		}
 		
+		// check site id
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
 		if ($id) {
+			// get admin ci_site_member_grade.id
+			$this->db->select('*');
+			$this->db->from('site_member_grade');
+			$this->db->where('site_id',$site_id);
+			$this->db->order_by('id','ASC');
+			$this->db->limit(1);
+			$grade_data = $this->db->get()->row_array();
 			
+			// get member data
+			$this->db->select('*');
+			$this->db->from('member_information');
+			$this->db->where('member_id',$id);
+			$this->db->where('site_id',$this->model->site['id']);
+			$this->db->limit(1);
+			$member_data = $this->db->get()->row_array();
+			
+			if ($grade_data['id'] == $member_data['site_member_grade_id']) {
+				$result = TRUE;
+			}
 		}
 		
 		return $result;
@@ -208,131 +304,141 @@ class Member_model extends CI_Model {
 	 * 
 	 * member DB install
 	 * 
-	 * @return	string	true / false
+	 * @param	string		$flag		true / false
+	 * @return	string		$return		true / false
 	 */
-	public function install () {
+	public function install ($flag = TRUE) {
 		$return = FALSE;
 		
 		// dbforge load
 		$this->load->dbforge();
 		
 		// member table
-		$fields = array(
-			'id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE,
-				'auto_increment'=>TRUE
-			),
-			'username'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'password'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'name'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'email'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'write_datetime'=>array(
-				'type'=>'DATETIME',
-				'default'=>'0000-00-00 00:00:00'
-			),
-			'update_datetime'=>array(
-				'type'=>'DATETIME',
-				'default'=>'0000-00-00 00:00:00'
-			),
-			'last_login'=>array(
-				'type'=>'DATETIME',
-				'default'=>'0000-00-00 00:00:00'
-			)
-		);
-		$this->dbforge->add_field($fields);
-		$this->dbforge->add_key('id',TRUE);
-		$return = $this->dbforge->create_table('member');
+		if (!$this->db->table_exists('member')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'username'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'password'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'name'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'email'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'write_datetime'=>array(
+						'type'=>'DATETIME',
+						'default'=>'0000-00-00 00:00:00'
+					),
+					'update_datetime'=>array(
+						'type'=>'DATETIME',
+						'default'=>'0000-00-00 00:00:00'
+					),
+					'last_login'=>array(
+						'type'=>'DATETIME',
+						'default'=>'0000-00-00 00:00:00'
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('member');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
 		
 		// member information table
-		$fields = array(
-			'id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE,
-				'auto_increment'=>TRUE
-			),
-			'member_id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE
-			),
-			'site_id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE
-			),
-			'site_member_grade_id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE
-			),
-			'description'=>array(
-				'type'=>'TEXT',
-				'null'=>TRUE
-			),
-			'language'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			)
-		);
-		$this->dbforge->add_field($fields);
-		$this->dbforge->add_key('id',TRUE);
-		$this->dbforge->create_table('member_information');
+		if (!$this->db->table_exists('member_information')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'member_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'site_member_grade_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'description'=>array(
+						'type'=>'TEXT',
+						'null'=>TRUE
+					),
+					'language'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$this->dbforge->create_table('member_information');
+			} else if (!$return) {
+				$return = FALSE;
+			}
+		}
 		
 		// login log table
-		$fields = array(
-			'id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE,
-				'auto_increment'=>TRUE
-			),
-			'member_id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE
-			),
-			'ip'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>45
-			),
-			'status'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>1
-			),
-			'write_datetime'=>array(
-				'type'=>'DATETIME',
-				'default'=>'0000-00-00 00:00:00'
-			)
-		);
-		$this->dbforge->add_field($fields);
-		$this->dbforge->add_key('id',TRUE);
-		$this->dbforge->create_table('login_log');
+		if (!$this->db->table_exists('login_log')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'member_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'ip'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>45
+					),
+					'status'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1
+					),
+					'write_datetime'=>array(
+						'type'=>'DATETIME',
+						'default'=>'0000-00-00 00:00:00'
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$this->dbforge->create_table('login_log');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
 		
 		return $return;
-	}
-	
-	/**
-	 * change
-	 * 
-	 * member DB 변경사항
-	 */
-	public function change () {
-		
 	}
 	
 	/**
@@ -351,6 +457,7 @@ class Member_model extends CI_Model {
 		$return = $this->dbforge->drop_table('member');
 		if ($return) {
 			$this->dbforge->drop_table('member_information');
+			$this->dbforge->drop_table('login_log');
 		}
 		
 		return $return;

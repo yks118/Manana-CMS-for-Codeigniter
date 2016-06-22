@@ -7,8 +7,10 @@ class Model extends CI_Model {
 	public $js = array();
 	public $path = '';
 	public $site = array();
+	public $layout = '';
+	public $menu = array();
 	
-	public function __construct() {
+	public function __construct () {
 		parent::__construct();
 		
 		if ($this->db->table_exists('site')) {
@@ -20,6 +22,9 @@ class Model extends CI_Model {
 		
 		// 기본 설정
 		$this->_default();
+		
+		// 메뉴 설정
+		$this->menu = $this->_menu($this->uri->segment(1));
 	}
 	
 	/**
@@ -29,7 +34,7 @@ class Model extends CI_Model {
 	 */
 	private function _default () {
 		// site setting
-		$this->html['site_title'] = 'Manana CMS';
+		$this->html['site_title'] = (isset($this->site['id']))?$this->site['name']:'Manana CMS';
 		
 		// css setting
 		$this->css('//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css');
@@ -42,6 +47,31 @@ class Model extends CI_Model {
 		$this->js('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js','footer');
 		$this->js($this->path.'/js/bootstrap-notify/bootstrap-notify.js','footer');
 		$this->js($this->path.'/js/common.js','footer');
+	}
+	
+	/**
+	 * _menu
+	 * 
+	 * 메뉴 설정
+	 * 
+	 * @param	string		$segment		uri first segment
+	 */
+	private function _menu ($segment = '') {
+		$menu_data = array();
+		
+		if ($segment == 'admin') {
+			// dashboard
+			$menu_data['dashboard']['name'] = lang('admin_menu_dashboard');
+			$menu_data['dashboard']['href'] = base_url('/admin/dashboard/');
+			$menu_data['dashboard']['target'] = '_self';
+		} else {
+			
+			if ($segment && isset($menu_data[$segment]['name'])) {
+				$this->html['site_title'] = $menu_data[$segment]['name'].' :: '.$this->html['site_title'];
+			}
+		}
+		
+		return $menu_data;
 	}
 	
 	/**
@@ -130,6 +160,39 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * read_model_auth
+	 * 
+	 * site model auth
+	 * 
+	 * @param	string		$model		model name
+	 * @param	numberic	$model_id	model pk
+	 * @param	numberic	$site_id	site id
+	 */
+	public function read_model_auth ($model,$model_id,$site_id = 0) {
+		$data = $result = array();
+		
+		// check ci_site.id
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		$this->db->select('*');
+		$this->db->from('model_auth');
+		$this->db->where('site_id',$site_id);
+		$this->db->where('model',$model);
+		$this->db->where('model_id',$model_id);
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $row) {
+			if ($row['status'] == 't') {
+				$data[$row['action']][] = $row['site_member_grade_id'];
+			}
+		}
+		
+		return $data;
+	}
+	
+	/**
 	 * write_data
 	 * 
 	 * site 생성
@@ -194,117 +257,374 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * write_model_auth
+	 * 
+	 * 각 모델별 권한 설정
+	 * 
+	 * @param	array		$data		ci_model_auth row
+	 * @param	string		$model		model name
+	 * @param	numberic	$model_id	model pk
+	 */
+	public function write_model_auth ($data,$model,$model_id,$site_id = '') {
+		$result = $model_auth_data = $insert = array();
+		
+		// check ci_site.id
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		foreach ($data as $key => $row) {
+			if (strpos($key,'model_auth_') !== FALSE && strpos($key,'model_auth_') == 0) {
+				foreach ($row as $value) {
+					$model_auth_data[] = array(
+						'site_id'=>$site_id,
+						'site_member_grade_id'=>$value,
+						'model'=>$model,
+						'model_id'=>$model_id,
+						'action'=>str_replace('model_auth_','',$key),
+						'status'=>'t'
+					);
+				}
+			}
+		}
+		
+		// insert ci_model_auth
+		$insert = $this->db->insert_batch('model_auth',$model_auth_data);
+		
+		// error check
+		if ($insert > 0) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_model_auth
+	 * 
+	 * 각 모델별 권한 설정을 수정
+	 * 
+	 * @param	array		$data		ci_model_auth row
+	 * @param	string		$model		model name
+	 * @param	numberic	$model_id	model pk
+	 */
+	public function update_model_auth ($data,$model,$model_id,$site_id = '') {
+		$action = '';
+		$result = $model_auth_result = $model_auth_data = $insert_data = $update_data = array();
+		
+		$result['status'] = TRUE;
+		
+		// check ci_site.id
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		foreach ($data as $key => $row) {
+			if (strpos($key,'model_auth_') !== FALSE && strpos($key,'model_auth_') == 0) {
+				$action = str_replace('model_auth_','',$key);
+				
+				// update
+				$this->db->set('status','f');
+				$this->db->where('site_id',$site_id);
+				$this->db->where('model',$model);
+				$this->db->where('model_id',$model_id);
+				$this->db->where('action',$action);
+				if ($this->db->update('model_auth')) {
+					$result['status'] = TRUE;
+					
+					// get DB
+					$this->db->select('*');
+					$this->db->from('model_auth');
+					$this->db->where('site_id',$site_id);
+					$this->db->where('model',$model);
+					$this->db->where('model_id',$model_id);
+					$this->db->where('action',$action);
+					$model_auth_result = $this->db->get()->result_array();
+					
+					foreach ($model_auth_result as $model_auth_key => $model_auth_row) {
+						$model_auth_data[$model_auth_row['site_member_grade_id']] = $model_auth_row['id'];
+					}
+					
+					foreach ($row as $value) {
+						if (isset($model_auth_data[$value])) {
+							// update
+							$update_data[] = array(
+								'id'=>$model_auth_data[$value],
+								'status'=>'t'
+							);
+						} else {
+							// insert
+							$insert_data[] = array(
+								'site_id'=>$site_id,
+								'site_member_grade_id'=>$value,
+								'model'=>$model,
+								'model_id'=>$model_id,
+								'action'=>$action,
+								'status'=>'t'
+							);
+						}
+					}
+					
+					// insert_batch
+					if (count($insert_data)) {
+						$this->db->insert_batch('model_auth');
+					}
+					
+					// update_batch
+					if (count($update_data)) {
+						$this->db->update_batch('model_auth',$update_data,'id');
+					}
+				} else {
+					$result['status'] = FALSE;
+					$result['message'] = $this->db->_error_message();
+					$result['number'] = $this->db->_error_number();
+					
+					break;
+				}
+			}
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * delete_model_auth
+	 * 
+	 * 모델 권한 설정 삭제
+	 * 
+	 * @param	string		$model		model name
+	 * @param	numberic	$model_id	model pk
+	 * @param	numberic	$site_id	ci_site.id
+	 */
+	public function delete_model_auth ($model,$model_id,$site_id = 0) {
+		$result = array();
+		
+		// check site_id
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		// delete DB
+		$this->db->where('site_id',$site_id);
+		$this->db->where('model',$model);
+		$this->db->where('model_id',$model_id);
+		if ($this->db->delete('model_auth')) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_delete_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * install
 	 * 
 	 * site DB 설치
 	 * 
-	 * @return	string	true / false
+	 * @param	string		$flag		true / false
+	 * @return	string		$return		true / false
 	 */
-	public function install () {
+	public function install ($flag = TRUE) {
 		$return = FALSE;
 		
 		// dbforge load
 		$this->load->dbforge();
 		
 		// site table
-		$fields = array(
-			'id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE,
-				'auto_increment'=>TRUE
-			),
-			'url'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'name'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'description'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'keywords'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'author'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'mobile_view'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>1
-			),
-			'robots'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>1
-			),
-			'login'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'language'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'member_id'=>array(
-				'type'=>'INT',
-				'constraint'=>11
-			)
-		);
-		$this->dbforge->add_field($fields);
-		$this->dbforge->add_key('id',TRUE);
-		$return = $this->dbforge->create_table('site');
+		if (!$this->db->table_exists('site')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'url'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'name'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'description'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'keywords'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'author'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'mobile_view'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1
+					),
+					'robots'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1
+					),
+					'login'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'language'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'member_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('site');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
 		
 		// site_member_grade table
-		$fields = array(
-			'id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE,
-				'auto_increment'=>TRUE
-			),
-			'site_id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE
-			),
-			'site_member_grade_id'=>array(
-				'type'=>'INT',
-				'constraint'=>11,
-				'unsigned'=>TRUE,
-				'default'=>0
-			),
-			'name'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'language'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>255
-			),
-			'default'=>array(
-				'type'=>'VARCHAR',
-				'constraint'=>1
-			)
-		);
-		$this->dbforge->add_field($fields);
-		$this->dbforge->add_key('id',TRUE);
-		$return = $this->dbforge->create_table('site_member_grade');
+		if (!$this->db->table_exists('site_member_grade')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'site_member_grade_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'default'=>0
+					),
+					'name'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'language'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'default'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('site_member_grade');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
+		// model_admin table
+		if (!$this->db->table_exists('model_admin')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'model'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'model_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'member_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('model_admin');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
+		// model_auth table
+		if (!$this->db->table_exists('model_auth')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'site_member_grade_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'model'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'model_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'action'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'status'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('model_auth');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
 		
 		return $return;
-	}
-	
-	/**
-	 * change
-	 * 
-	 * site DB 변경사항
-	 */
-	public function change () {
-		
 	}
 	
 	/**
@@ -323,6 +643,7 @@ class Model extends CI_Model {
 		$return = $this->dbforge->drop_table('site');
 		if ($return) {
 			$this->dbforge->drop_table('site_member_grade');
+			$this->dbforge->drop_table('site_auth');
 		}
 		
 		return $return;
