@@ -38,4 +38,15 @@ class Member extends CI_Controller {
 			echo notify($result['message'],'danger',TRUE);
 		}
 	}
+	
+	/**
+	 * admin_index
+	 */
+	public function admin_index () {
+		$data = array();
+		
+		$data['total'] = $this->member->read_total();
+		
+		$this->load->view('admin/member/list',$data);
+	}
 }

@@ -1,9 +1,39 @@
 html {
   body {
     font-family:'Segoe UI', 'Tahoma', 'Hannari Mincho', 'Meiryo', 'MS P Gothic', 'Malgun Gothic', 'Gulim';
+    background-color:#edecec;
+    min-height:100vh;
+    position:relative;
     
     iframe#hIframe {
       display:none;
+    }
+    
+    ul.list-table {
+      li {
+        ul.list-table-th {
+          font-weight:bold;
+          border-bottom:2px solid #ddd;
+          line-height:2em;
+        }
+        
+        ul.list-table-td {
+          line-height:2em;
+        }
+      }
+    }
+    
+    ul.list-table.list-table-hover {
+      li {
+        ul.list-table-td {
+          background-color:transparent;
+          transition:background-color 200ms linear;
+        }
+        
+        ul.list-table-td:hover {
+          background-color:#fff;
+        }
+      }
     }
   }
 }

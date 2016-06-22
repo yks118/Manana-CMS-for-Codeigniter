@@ -25,12 +25,10 @@ function check_minlength (obj) {
 	var length = obj.val().length;
 	
 	if (length >= minlength) {
-		obj.parent('.form-group').addClass('has-success').removeClass('has-error');
-		obj.parent('.input-group').parent('.form-group').addClass('has-success').removeClass('has-error');
+		obj.closest('.form-group').addClass('has-success').removeClass('has-error');
 		obj.next('.glyphicon').addClass('glyphicon-ok').removeClass('glyphicon-remove');
 	} else {
-		obj.parent('.form-group').addClass('has-error').removeClass('has-success');
-		obj.parent('.input-group').parent('.form-group').addClass('has-error').removeClass('has-success');
+		obj.closest('.form-group').addClass('has-error').removeClass('has-success');
 		obj.next('.glyphicon').addClass('glyphicon-remove').removeClass('glyphicon-ok');
 	}
 }
@@ -64,13 +62,11 @@ jQuery(function(){
 				
 				if (value) {
 					if (!flag) {
-						jQuery(this).parent('.form-group').addClass('has-success').removeClass('has-error');
-						jQuery(this).parent('.input-group').parent('.form-group').addClass('has-success').removeClass('has-error');
+						jQuery(this).closest('.form-group').addClass('has-success').removeClass('has-error');
 						jQuery(this).next('.glyphicon').addClass('glyphicon-ok').removeClass('glyphicon-remove');
 					}
 				} else {
-					jQuery(this).parent('.form-group').addClass('has-error').removeClass('has-success');
-					jQuery(this).parent('.input-group').parent('.form-group').addClass('has-error').removeClass('has-success');
+					jQuery(this).closest('.form-group').addClass('has-error').removeClass('has-success');
 					jQuery(this).next('.glyphicon').addClass('glyphicon-remove').removeClass('glyphicon-ok');
 				}
 			});

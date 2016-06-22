@@ -12,23 +12,30 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 
+$hook['pre_system'][] = array(
+	'class'=>'manana_hook',
+	'function'=>'pre_system',
+	'filename'=>'manana_hook.php',
+	'filepath'=>'hooks'
+);
+
 $hook['pre_controller'][] = array(
-	'class'=>'manana',
+	'class'=>'manana_hook',
 	'function'=>'pre_controller',
-	'filename'=>'manana.php',
+	'filename'=>'manana_hook.php',
 	'filepath'=>'hooks'
 );
 
 $hook['post_controller_constructor'][] = array(
-	'class'=>'manana',
+	'class'=>'manana_hook',
 	'function'=>'post_controller_constructor',
-	'filename'=>'manana.php',
+	'filename'=>'manana_hook.php',
 	'filepath'=>'hooks'
 );
 
 $hook['display_override'][] = array(
-	'class'=>'manana',
+	'class'=>'manana_hook',
 	'function'=>'display_override',
-	'filename'=>'manana.php',
+	'filename'=>'manana_hook.php',
 	'filepath'=>'hooks'
 );

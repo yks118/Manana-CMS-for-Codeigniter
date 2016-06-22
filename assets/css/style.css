@@ -1,8 +1,26 @@
 html body {
   font-family: 'Segoe UI', 'Tahoma', 'Hannari Mincho', 'Meiryo', 'MS P Gothic', 'Malgun Gothic', 'Gulim';
+  background-color: #edecec;
+  min-height: 100vh;
+  position: relative;
 }
 html body iframe#hIframe {
   display: none;
+}
+html body ul.list-table li ul.list-table-th {
+  font-weight: bold;
+  border-bottom: 2px solid #ddd;
+  line-height: 2em;
+}
+html body ul.list-table li ul.list-table-td {
+  line-height: 2em;
+}
+html body ul.list-table.list-table-hover li ul.list-table-td {
+  background-color: transparent;
+  transition: background-color 200ms linear;
+}
+html body ul.list-table.list-table-hover li ul.list-table-td:hover {
+  background-color: #fff;
 }
 /* loop default */
 .mt0 {
