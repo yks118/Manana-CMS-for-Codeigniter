@@ -2,6 +2,8 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Member_model extends CI_Model {
+	private $select_field = 'm.*, m.description AS memo, mi.description';
+	
 	public $data = array();
 	public $skin = 'basic';
 	public $menu = array();
@@ -13,7 +15,9 @@ class Member_model extends CI_Model {
 		$this->load->library('encrypt');
 		
 		// set member data
-		$this->data = $this->read_id($this->session->userdata('member_id'));
+		if ($this->session->userdata('member_id')) {
+			$this->data = $this->read_data('id',$this->session->userdata('member_id'));
+		}
 		
 		if ($this->uri->segment(1) == 'admin') {
 			$this->menu['member']['name'] = lang('admin_menu_member');
@@ -45,6 +49,35 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
+	 * _read_grade
+	 * 
+	 * 회원등급 리턴
+	 * 
+	 * @param	numberic	$id			ci_member.id
+	 * @param	numberic	$site_id	ci_site.id
+	 */
+	private function _read_grade ($id,$site_id = 0) {
+		$data = $result = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		$this->db->select('smg.id, smg.name');
+		$this->db->from('member_grade mg');
+		$this->db->join('site_member_grade smg','mg.site_member_grade_id = smg.id','LEFT');
+		$this->db->where('mg.member_id',$id);
+		$this->db->where('mg.site_id',$site_id);
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $row) {
+			$data[$row['id']] = $row['name'];
+		}
+		
+		return $data;
+	}
+	
+	/**
 	 * login
 	 * 
 	 * 로그인 처리
@@ -53,8 +86,11 @@ class Member_model extends CI_Model {
 	 * @param	string		$password		ci_member.password
 	 */
 	public function login ($username,$password) {
-		$result = $log_data = array();
-		$member = $this->read_username($username);
+		$login_key = '';
+		$result = $log_data = $member = array();
+		
+		$login_key = $this->model->site['login'];
+		$member = $this->read_data($login_key,$username);
 		
 		// login_log check
 		$this->db->select('*');
@@ -77,6 +113,11 @@ class Member_model extends CI_Model {
 				// set session
 				$this->session->set_userdata('member_id',$member['id']);
 				
+				// update last login
+				$this->db->set('last_login',date('Y-m-d H:i:s'));
+				$this->db->where($login_key,$username);
+				$this->db->update('member');
+				
 				$result['status'] = TRUE;
 				$result['message'] = lang('member_login_success');
 			} else {
@@ -95,39 +136,55 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
-	 * read_id
+	 * logout
 	 * 
-	 * id로 ci_member 테이블 검색
-	 * 
-	 * @param	numberic	$id		ci_member.id
+	 * 로그아웃 처리
 	 */
-	public function read_id ($id) {
-		$this->db->select('m.*, mi.description, smg.name AS grade');
-		$this->db->from('member m');
-		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
-		$this->db->join('site_member_grade smg','mi.site_member_grade_id = smg.id','LEFT');
-		$this->db->where('mi.site_id',$this->model->site['id']);
-		$this->db->where('m.id',$id);
-		$this->db->limit(1);
-		return $this->db->get()->row_array();
+	public function logout () {
+		$result = array();
+		
+		if (isset($this->data['id'])) {
+			$this->session->unset_userdata('member_id');
+			
+			$result['status'] = TRUE;
+			$result['message'] = lang('member_logout_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = lang('member_logout_danger_not_login');
+		}
+		
+		return $result;
 	}
 	
 	/**
-	 * read_username
+	 * read_data
 	 * 
-	 * username로 ci_member 테이블 검색
+	 * ci_member 테이블을 지정된 필드로 검색해서 리턴
 	 * 
-	 * @param	string		$username		ci_member.username
+	 * @param	string		$field
+	 * @param	string		$value
+	 * @param	numberic	$site_id		ci_site.id
 	 */
-	public function read_username ($username) {
-		$this->db->select('m.*, mi.description, smg.name AS grade');
+	public function read_data ($field,$value,$site_id = 0) {
+		$data = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		// get member info
+		$this->db->select($this->select_field);
 		$this->db->from('member m');
 		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
-		$this->db->join('site_member_grade smg','mi.site_member_grade_id = smg.id','LEFT');
-		$this->db->where('mi.site_id',$this->model->site['id']);
-		$this->db->where('m.username',$username);
+		$this->db->where('mi.site_id',$site_id);
+		$this->db->where('m.'.$field,$value);
 		$this->db->limit(1);
-		return $this->db->get()->row_array();
+		$data = $this->db->get()->row_array();
+		
+		// get member grade
+		$data['grade'] = $this->_read_grade($data['id'],$site_id);
+		
+		return $data;
 	}
 	
 	/**
@@ -146,13 +203,30 @@ class Member_model extends CI_Model {
 	 * 
 	 * @param	array	$data
 	 */
-	public function read_list ($data) {
+	public function read_list ($data = array()) {
+		$list = $result = array();
+		
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = $this->model->site['id'];
+		}
+		
+		if (!isset($data['limit'])) {
+			$data['limit'] = 20;
+		}
+		
+		if (!isset($data['offset'])) {
+			$data['offset'] = 0;
+		}
+		
+		if (!isset($data['total'])) {
+			$data['total'] = $this->read_total();
+		}
+		
 		// get list
-		$this->db->select('*');
+		$this->db->select($this->select_field);
 		$this->db->from('member m');
 		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
-		$this->db->join('site_member_grade smg','mi.site_member_grade_id = smg.id','LEFT');
-		$this->db->where('mi.site_id',$this->model->site['id']);
+		$this->db->where('mi.site_id',$data['site_id']);
 		
 		if (isset($data['order_by']) && isset($data['order_by_sort'])) {
 			$this->db->order_by($data['order_by'],$data['order_by_sort']);
@@ -167,20 +241,37 @@ class Member_model extends CI_Model {
 		if (isset($data['offset'])) {
 			$this->db->offset($data['offset']);
 		}
+		
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $key => $row) {
+			$row['number'] = $data['total'] - $key;
+			
+			$list[] = $row;
+		}
+		
+		return $list;
 	}
 	
 	/**
 	 * read_grade_list
 	 * 
 	 * 사이트의 회원등급 리스트를 리턴
+	 * 
+	 * @param	numberic	$site_id		ci_site.id
 	 */
-	public function read_grade_list () {
+	public function read_grade_list ($site_id = 0) {
 		$list = array();
 		$language = $this->config->item('language');
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
 		
 		// get DB
 		$this->db->select();
 		$this->db->from('site_member_grade');
+		$this->db->where('site_id',$site_id);
 		$this->db->order_by('site_member_grade_id','ASC');
 		$this->db->order_by('id','ASC');
 		$query = $this->db->get();
@@ -230,9 +321,9 @@ class Member_model extends CI_Model {
 			
 			// get member data
 			$this->db->select('*');
-			$this->db->from('member_information');
+			$this->db->from('member_grade');
 			$this->db->where('member_id',$id);
-			$this->db->where('site_id',$this->model->site['id']);
+			$this->db->where('site_id',$site_id);
 			$this->db->limit(1);
 			$member_data = $this->db->get()->row_array();
 			
@@ -261,7 +352,7 @@ class Member_model extends CI_Model {
 			$data['member_write_datetime'] = $data['member_update_datetime'] = date('Y-m-d H:i:s');
 		}
 		
-		$member_data = $member_information_data = array();
+		$member_data = $member_information_data = $member_grade_data = array();
 		foreach ($data as $key => $value) {
 			if (strpos($key,'member_information_') !== FALSE && strpos($key,'member_information_') == 0) {
 				$member_information_data[str_replace('member_information_','',$key)] = $value;
@@ -282,14 +373,139 @@ class Member_model extends CI_Model {
 			if (!$this->db->table_exists('site')) {
 				// 첫 사이트라면..
 				$member_information_data['site_id'] = 1;
-				$member_information_data['site_member_grade_id'] = 1;
 				$member_information_data['language'] = $this->config->item('language');
+				
+				$member_grade_data['site_id'] = 1;
+				$member_grade_data['member_id'] = $result['insert_id'];
+				$member_grade_data['site_member_grade_id'] = 1;
 			} else {
 				// 일반 회원의 가입..
 			}
 			
 			// insert ci_member_information
 			$this->db->insert('member_information',$member_information_data);
+			
+			// insert ci_member_grade
+			$this->db->insert('member_grade',$member_grade_data);
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_grade
+	 * 
+	 * 등급 업데이트
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_member.id
+	 * @param	numberic	$site_id	ci_site.id
+	 */
+	public function update_grade ($data,$id,$site_id = 0) {
+		$result = $grade_data = $insert_data = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		// get grade DB
+		$this->db->select('*');
+		$this->db->from('member_grade');
+		$this->db->where('member_id',$id);
+		$this->db->where('site_id',$site_id);
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $row) {
+			if (!in_array($row['site_member_grade_id'],$data)) {
+				// delete
+				$this->db->where('id',$row['id']);
+				$this->db->delete('member_grade');
+			}
+			
+			$grade_data[] = $row['site_member_grade_id'];
+		}
+		
+		foreach ($data as $value) {
+			if (!in_array($value,$grade_data)) {
+				// insert
+				$insert_data[] = array(
+					'member_id'=>$id,
+					'site_id'=>$site_id,
+					'site_member_grade_id'=>$value
+				);
+			}
+		}
+		
+		if (count($insert_data)) {
+			$this->db->insert_batch('member_grade',$insert_data);
+		}
+		
+		$result = array();
+		$result['status'] = TRUE;
+		
+		return $result;
+	}
+	
+	/**
+	 * update_information
+	 * 
+	 * ci_member_information 수정
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_member.id
+	 * @param	numberic	$site_id	ci_site.id
+	 * @param	string		$language
+	 */
+	public function update_information ($data,$id,$site_id = 0,$language = '') {
+		$result = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		$this->db->where('member_id',$id);
+		$this->db->where('site_id',$site_id);
+		$this->db->where('language',$language);
+		if ($this->db->update('member_information',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_data
+	 * 
+	 * ci_member 업데이트
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_member.id
+	 */
+	public function update_data ($data,$id) {
+		$result = array();
+		
+		// encode password
+		if (isset($data['password'])) {
+			$data['password'] = $this->_encode($data['password']);
+		}
+		
+		$this->db->where('id',$id);
+		if ($this->db->update('member',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
 		} else {
 			$result['status'] = FALSE;
 			$result['message'] = $this->db->_error_message();
@@ -350,6 +566,10 @@ class Member_model extends CI_Model {
 					'last_login'=>array(
 						'type'=>'DATETIME',
 						'default'=>'0000-00-00 00:00:00'
+					),
+					'description'=>array(
+						'type'=>'TEXT',
+						'null'=>TRUE
 					)
 				);
 				$this->dbforge->add_field($fields);
@@ -360,8 +580,8 @@ class Member_model extends CI_Model {
 			}
 		}
 		
-		// member information table
-		if (!$this->db->table_exists('member_information')) {
+		// member grade table
+		if (!$this->db->table_exists('member_grade')) {
 			if ($flag) {
 				$fields = array(
 					'id'=>array(
@@ -381,6 +601,35 @@ class Member_model extends CI_Model {
 						'unsigned'=>TRUE
 					),
 					'site_member_grade_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$this->dbforge->create_table('member_grade');
+			} else if (!$return) {
+				$return = FALSE;
+			}
+		}
+		
+		// member information table
+		if (!$this->db->table_exists('member_information')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'member_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'site_id'=>array(
 						'type'=>'INT',
 						'constraint'=>11,
 						'unsigned'=>TRUE
