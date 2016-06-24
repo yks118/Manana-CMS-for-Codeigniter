@@ -72,4 +72,7 @@ jQuery(function(){
 			});
 		}
 	});
+	
+	// textarea autosize
+	autosize(jQuery('textarea'));
 });

@@ -46,6 +46,7 @@ class Model extends CI_Model {
 		$this->js('//ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js','header');
 		$this->js('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js','footer');
 		$this->js($this->path.'/js/bootstrap-notify/bootstrap-notify.js','footer');
+		$this->js($this->path.'/js/autosize/autosize.js','footer');
 		$this->js($this->path.'/js/common.js','footer');
 	}
 	

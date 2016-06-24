@@ -23,7 +23,7 @@
 		<!-- Default Setting -->
 		<script type="text/javascript" charset="UTF-8">
 		var prefix = "<?php echo $this->config->item('cookie_prefix'); ?>";
-		var site_url = "<?php echo $this->model->site['url']; ?>";
+		var site_url = "<?php echo (isset($this->model->site['url']))?$this->model->site['url']:base_url('/'); ?>";
 		</script>
 	</head>
 	<body>

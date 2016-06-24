@@ -34,7 +34,7 @@ class manana_hook {
 		$this->CI =& get_instance();
 		
 		// 데이터베이스 설정 확인
-		if (!$this->CI->db->database && ($this->CI->uri->segment(1) != 'install')) {
+		if ((!$this->CI->db->database || !$this->CI->db->table_exists('member')) && $this->CI->uri->segment(1) != 'install') {
 			// 설치 페이지로 리다이렉트
 			redirect('/install/');
 		} else if ($this->CI->uri->segment(1) == 'admin') {

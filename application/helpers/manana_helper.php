@@ -126,3 +126,20 @@ function delete_prefix ($data,$prefix) {
 	
 	return $result;
 }
+
+/**
+ * datetime
+ * 
+ * 시간 표시
+ * 
+ * @param	datatime	$datetime
+ */
+function datetime ($datetime) {
+	if (strtotime($datetime) >= strtotime('-1 day')) {
+		$datetime = date('H:i',strtotime($datetime));
+	} else {
+		$datetime = date('Y-m-d',strtotime($datetime));
+	}
+	
+	return $datetime;
+}
