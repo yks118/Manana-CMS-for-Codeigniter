@@ -7,6 +7,16 @@
 		<meta name="Generator" content="codeigniter">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		
+		<?php if ($this->model->site['robots'] == 't') { ?>
+		<meta name="robots" content="all" />
+		<?php } else { ?>
+		<meta name="robots" content="noindex,nofollow" />
+		<?php } ?>
+		
+		<?php if ($this->model->site['mobile_view'] == 't') { ?>
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
+		<?php } ?>
+		
 		<!-- site title -->
 		<title><?php echo $site_title; ?></title>
 		

@@ -61,5 +61,6 @@ $lang['admin_menu_dashboard'] = '대시보드';
 $lang['admin_menu_member'] = '회원관리';
 $lang['admin_menu_member_grade'] = '등급 관리';
 $lang['admin_menu_board'] = '게시판 설정';
+$lang['admin_menu_site'] = '사이트 관리';
 $lang['admin_module_install_success'] = '모듈이 설치되었습니다.';
 $lang['admin_module_install_error'] = '모듈 설치에 실패하였습니다.';

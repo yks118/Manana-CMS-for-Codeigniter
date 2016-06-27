@@ -10,6 +10,8 @@ class MY_Router extends CI_Router {
 		
 		$admin_method[] = 'dashboard';
 		$admin_method[] = 'install';
+		$admin_method[] = 'site';
+		$admin_method[] = 'updateSiteForm';
 		
 		if ($uris[0] == 'admin' && isset($uris[1]) && !in_array($uris[1],$admin_method)) {
 			$this->class = $uris[1];

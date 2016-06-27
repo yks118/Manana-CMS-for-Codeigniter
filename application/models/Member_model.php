@@ -603,11 +603,11 @@ class Member_model extends CI_Model {
 	public function update_site_grade ($data,$site_member_grade_id) {
 		$result = array();
 		
-		if (empty($data['site_id'])) {
+		if (!isset($data['site_id'])) {
 			$data['site_id'] = $this->model->site['id'];
 		}
 		
-		if (empty($data['language'])) {
+		if (!isset($data['language'])) {
 			$data['language'] = $this->config->item('language');
 		}
 		

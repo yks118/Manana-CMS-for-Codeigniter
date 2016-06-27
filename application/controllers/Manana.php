@@ -39,4 +39,19 @@ class Manana extends CI_Controller {
 		
 		echo js($js);
 	}
+	
+	/**
+	 * robots
+	 * 
+	 * robots.txt
+	 */
+	public function robots () {
+		if ($this->model->site['robots'] == 't') {
+			echo 'User-agent: *
+Disallow: ';
+		} else {
+			echo 'User-agent: *
+Disallow: /';
+		}
+	}
 }

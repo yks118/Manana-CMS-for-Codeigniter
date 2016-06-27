@@ -12,7 +12,7 @@
 				
 				<div class="form-group">
 					<label for="site_url">Site Url</label>
-					<input type="text" class="form-control" id="site_url" name="site_url" value="<?php echo $_SERVER['HTTP_HOST']; ?>" maxlength="255" required="required" readonly="readonly" />
+					<input type="text" class="form-control" id="site_url" name="site_url" value="<?php echo $_SERVER['HTTP_HOST']; ?>" maxlength="255" required="required" />
 				</div>
 				
 				<div class="form-group">

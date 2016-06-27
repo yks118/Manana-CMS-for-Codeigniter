@@ -25,6 +25,12 @@ class Model extends CI_Model {
 		
 		// 메뉴 설정
 		$this->menu = $this->_menu($this->uri->segment(1));
+		
+		if ($this->uri->segment(1) == 'admin') {
+			$this->menu['site']['name'] = lang('admin_menu_site');
+			$this->menu['site']['href'] = base_url('/admin/site/');
+			$this->menu['site']['target'] = '_self';
+		}
 	}
 	
 	/**
@@ -401,6 +407,34 @@ class Model extends CI_Model {
 					break;
 				}
 			}
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_data
+	 * 
+	 * ci_site 업데이트
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_site.id
+	 */
+	public function update_data ($data,$id) {
+		$result = array();
+		
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
+		}
+		
+		$this->db->where('id',$id);
+		if ($this->db->update('site',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
 		}
 		
 		return $result;

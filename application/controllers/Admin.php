@@ -51,6 +51,44 @@ class Admin extends CI_Controller {
 	}
 	
 	/**
+	 * site
+	 * 
+	 * site 관리 화면
+	 */
+	public function site () {
+		$data = array();
+		
+		$data['data'] = $this->model->read_site_url(base_url('/'));
+		
+		$this->load->view('admin/site',$data);
+	}
+	
+	/**
+	 * updateSiteForm
+	 * 
+	 * site 관리 업데이트
+	 */
+	public function updateSiteForm () {
+		$id = 0;
+		$result = $data = array();
+		
+		$id = $this->input->post('site_id');
+		$data = delete_prefix($this->model->post_data('site_','site_id'),'site_');
+		
+		$result = $this->model->update_data($data,$id);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/admin/site/').'";');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
+	
+	/**
 	 * install
 	 * 
 	 * 모듈 갱신
