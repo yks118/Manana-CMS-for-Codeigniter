@@ -46,7 +46,7 @@
 	<div class="form-group">
 		<label for="grade" class="mb0">Grade</label>
 		<div>
-			<?php foreach ($member_grade_list as $row) { ?>
+			<?php foreach ($site_member_grade_list as $row) { ?>
 			<label class="checkbox-inline">
 				<input type="checkbox" id="grade_<?php echo $row['id']; ?>" name="grade[]" value="<?php echo $row['id']; ?>"
 					<?php echo (isset($this->member->data['grade'][$row['id']]))?'checked="checked"':''; ?>

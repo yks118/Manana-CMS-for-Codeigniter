@@ -46,14 +46,10 @@
   transform: translate3d(0px, 0px, 0px);
   transition: all 300ms ease 0s;
 }
-#adminLayout #lnbLayout ul li {
-  border-bottom: 1px solid #ccc;
-}
 #adminLayout #lnbLayout ul li a {
   padding: 0px 15px;
   text-decoration: none;
   display: block;
-  font-size: 16px;
   line-height: 50px;
 }
 #adminLayout #lnbLayout ul li.siteTitle {
@@ -65,7 +61,19 @@
   font-size: 25px;
   font-weight: bold;
 }
-#adminLayout #lnbLayout ul li.active a {
+#adminLayout #lnbLayout ul li.lnb {
+  border-bottom: 1px solid #ccc;
+}
+#adminLayout #lnbLayout ul li.lnb a.lnb {
+  font-size: 16px;
+}
+#adminLayout #lnbLayout ul li.lnb ul li.snb a.snb {
+  padding-left: 30px;
+}
+#adminLayout #lnbLayout ul li.lnb.active a.lnb {
+  color: #000;
+}
+#adminLayout #lnbLayout ul li.lnb.active ul li.snb.active a.snb {
   color: #000;
 }
 #adminLayout #documentLayout {

@@ -121,6 +121,7 @@ class Model extends CI_Model {
 	 * @param	string		$url	site url
 	 */
 	public function read_site_url ($url) {
+		$data = $site_member_grade_row = array();
 		$url = preg_replace('/(https?:\/\/)([0-9.]+)(\/?)/i','$2',$url);
 		
 		// get DB
@@ -128,7 +129,19 @@ class Model extends CI_Model {
 		$this->db->from('site');
 		$this->db->like('url',$url,'both');
 		$this->db->limit(1);
-		return $this->db->get()->row_array();
+		$data = $this->db->get()->row_array();
+		
+		// get site admin member grade id
+		$this->db->select('*');
+		$this->db->from('site_member_grade');
+		$this->db->where('site_id',$data['id']);
+		$this->db->order_by('id','ASC');
+		$this->db->limit(1);
+		$site_member_grade_row = $this->db->get()->row_array();
+		
+		$data['admin_grade_id'] = $site_member_grade_row['id'];
+		
+		return $data;
 	}
 	
 	/**

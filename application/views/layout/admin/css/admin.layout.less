@@ -57,13 +57,10 @@
     
     ul {
       li {
-        border-bottom:1px solid #ccc;
-        
         a {
           padding:0px 15px;
           text-decoration:none;
           display:block;
-          font-size:16px;
           line-height:50px;
         }
       }
@@ -79,9 +76,33 @@
         }
       }
       
-      li.active {
-        a {
+      li.lnb {
+        border-bottom:1px solid #ccc;
+        
+        a.lnb {
+          font-size:16px;
+        }
+        
+        ul {
+          li.snb {
+            a.snb {
+              padding-left:30px;
+            }
+          }
+        }
+      }
+      
+      li.lnb.active {
+        a.lnb {
           color:#000;
+        }
+        
+        ul {
+          li.snb.active {
+            a.snb {
+              color:#000;
+            }
+          }
         }
       }
     }

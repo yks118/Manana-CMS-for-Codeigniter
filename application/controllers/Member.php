@@ -61,7 +61,7 @@ class Member extends CI_Controller {
 		
 		$data['action'] = 'update';
 		$data['data'] = $this->member->read_data('id',$id);
-		$data['member_grade_list'] = $this->member->read_grade_list();
+		$data['site_member_grade_list'] = $this->member->read_site_grade_list();
 		
 		$this->load->view('admin/member/write',$data);
 	}
@@ -97,6 +97,61 @@ class Member extends CI_Controller {
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
 			echo js('parent.document.location.href = "'.base_url('/admin/member/update/'.$id.'/').'";');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
+	
+	/**
+	 * admin_grade
+	 */
+	public function admin_grade () {
+		$data = array();
+		
+		$data['list'] = $this->member->read_site_grade_list();
+		
+		$this->load->view('admin/member/grade',$data);
+	}
+	
+	/**
+	 * admin_writeGradeForm
+	 */
+	public function admin_writeGradeForm () {
+		$result = $data = array();
+		
+		$data['name'] = $this->input->post('grade_name');
+		
+		$result = $this->member->write_site_grade($data);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/admin/member/grade/').'";');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
+	
+	/**
+	 * admin_updateGradeForm
+	 */
+	public function admin_updateGradeForm () {
+		$id = 0;
+		$result = $data = array();
+		
+		$id = $this->input->post('grade_id');
+		$data = delete_prefix($this->model->post_data('grade_','grade_id'),'grade_');
+		
+		$result = $this->member->update_site_grade($data,$id);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/admin/member/grade/').'";');
 		} else {
 			// error
 			echo notify($result['message'],'danger',TRUE);

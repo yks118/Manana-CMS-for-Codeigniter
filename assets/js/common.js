@@ -35,7 +35,7 @@ function check_minlength (obj) {
 
 jQuery(function(){
 	// input setting
-	jQuery('input').each(function(){
+	jQuery('input[type!="hidden"]').each(function(){
 		// set class has-feedback
 		jQuery(this).parent('.form-group').addClass('has-feedback');
 		jQuery(this).parent('.input-group').parent('.form-group').addClass('has-feedback');

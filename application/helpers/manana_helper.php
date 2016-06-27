@@ -121,7 +121,7 @@ function delete_prefix ($data,$prefix) {
 	$result = array();
 	
 	foreach ($data as $key => $row) {
-		$result[str_replace($prefix,'',$key)] = $row;
+		$result[preg_replace('/^'.$prefix.'(.+)/i','$1',$key)] = $row;
 	}
 	
 	return $result;

@@ -23,6 +23,10 @@ class Member_model extends CI_Model {
 			$this->menu['member']['name'] = lang('admin_menu_member');
 			$this->menu['member']['href'] = base_url('/admin/member/');
 			$this->menu['member']['target'] = '_self';
+			
+			$this->menu['member']['children']['grade']['name'] = lang('admin_menu_member_grade');
+			$this->menu['member']['children']['grade']['href'] = base_url('/admin/member/grade/');
+			$this->menu['member']['children']['grade']['target'] = '_self';
 		}
 	}
 	
@@ -260,7 +264,7 @@ class Member_model extends CI_Model {
 	 * 
 	 * @param	numberic	$site_id		ci_site.id
 	 */
-	public function read_grade_list ($site_id = 0) {
+	public function read_site_grade_list ($site_id = 0) {
 		$list = array();
 		$language = $this->config->item('language');
 		
@@ -397,6 +401,44 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
+	 * write_site_grade
+	 * 
+	 * 사이트 등급 추가
+	 * 
+	 * @param	array		$data
+	 */
+	public function write_site_grade ($data) {
+		$result = array();
+		
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = $this->model->site['id'];
+		}
+		
+		if (!isset($data['site_member_grade_id'])) {
+			$data['site_member_grade_id'] = 0;
+		}
+		
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
+		}
+		
+		if (!isset($data['default'])) {
+			$data['default'] = 'f';
+		}
+		
+		if ($this->db->insert('site_member_grade',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * update_grade
 	 * 
 	 * 등급 업데이트
@@ -504,6 +546,48 @@ class Member_model extends CI_Model {
 		
 		$this->db->where('id',$id);
 		if ($this->db->update('member',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_site_grade
+	 * 
+	 * ci_site_member_grade 업데이트
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$grade_id		ci_grade.id
+	 */
+	public function update_site_grade ($data,$site_member_grade_id) {
+		$result = array();
+		
+		if (empty($data['site_id'])) {
+			$data['site_id'] = $this->model->site['id'];
+		}
+		
+		if (empty($data['language'])) {
+			$data['language'] = $this->config->item('language');
+		}
+		
+		if (isset($data['default']) && $data['default'] == 't') {
+			$this->db->set('default','f');
+			$this->db->where('site_id',$data['site_id']);
+			$this->db->update('site_member_grade');
+			
+			$this->db->set('default','t');
+			$this->db->where('site_member_grade_id',$data['site_member_grade_id']);
+			$this->db->update('site_member_grade');
+		}
+		
+		$this->db->where('id',$site_member_grade_id);
+		if ($this->db->update('site_member_grade',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('system_update_success');
 		} else {

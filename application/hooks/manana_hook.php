@@ -105,7 +105,6 @@ class manana_hook {
 			} else {
 				$data = array();
 				$data['page'] = $output;
-				$data['path'] = base_url('/assets/views/layout/'.$this->CI->model->layout);
 				$this->CI->model->html['layout'] = $this->CI->load->view('layout/'.$this->CI->model->layout.'/layout',$data,TRUE);
 			}
 			
