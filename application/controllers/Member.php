@@ -157,4 +157,25 @@ class Member extends CI_Controller {
 			echo notify($result['message'],'danger',TRUE);
 		}
 	}
+	
+	/**
+	 * admin_deleteGradeForm
+	 */
+	public function admin_deleteGradeForm () {
+		$id = 0;
+		$result = array();
+		
+		$id = $this->input->post('grade_id');
+		$result = $this->member->delete_site_grade($id);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/admin/member/grade/').'";');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
 }

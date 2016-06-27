@@ -294,6 +294,41 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
+	 * read_site_grade_id
+	 * 
+	 * 사이트의 회원등급 정보를 리턴
+	 * 
+	 * @param	numberic	$site_grade_id		ci_site_member_grade.id
+	 */
+	public function read_site_grade_id ($site_grade_id) {
+		$data = array();
+		
+		$this->db->select('*');
+		$this->db->from('site_member_grade');
+		$this->db->where('id',$site_grade_id);
+		$this->db->limit(1);
+		$data = $this->db->get()->row_array();
+		
+		return $data;
+	}
+	
+	/**
+	 * read_grade_total
+	 * 
+	 * 사이트에 해당 등급의 멤버 숫자를 리턴
+	 * 
+	 * @param	numberic	$site_grade_id		ci_site_member_grade.id
+	 */
+	public function read_grade_total ($site_grade_id) {
+		$total = 0;
+		
+		$this->db->where('site_member_grade_id',$site_grade_id);
+		$total = $this->db->count_all_results('member_grade');
+		
+		return $total;
+	}
+	
+	/**
 	 * check_admin
 	 * 
 	 * 운영자인지 체크
@@ -594,6 +629,41 @@ class Member_model extends CI_Model {
 			$result['status'] = FALSE;
 			$result['message'] = $this->db->_error_message();
 			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * delete_site_grade
+	 * 
+	 * ci_site_member_grade 삭제
+	 * 
+	 * @param	numberic	$id		ci_site_member_grade.id
+	 */
+	public function delete_site_grade ($site_grade_id) {
+		$total = 0;
+		$result = $data = array();
+		
+		$total = $this->member->read_grade_total($id);
+		$data = $this->member->read_site_grade_id($id);
+		
+		if ($data['default'] == 't') {
+			$result['status'] = FALSE;
+			$result['message'] = lang('member_grade_delete_danger_default');
+		} else if (empty($total)) {
+			$result['status'] = FALSE;
+			$result['message'] = lang('member_grade_delete_danger_empty');
+		} else {
+			$this->db->where('id',$site_grade_id);
+			if ($this->db->delete('site_member_grade')) {
+				$result['status'] = TRUE;
+				$result['message'] = lang('member_grade_delete_success');
+			} else {
+				$result['status'] = FALSE;
+				$result['message'] = $this->db->_error_message();
+				$result['number'] = $this->db->_error_number();
+			}
 		}
 		
 		return $result;

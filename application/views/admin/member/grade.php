@@ -18,7 +18,7 @@ $this->model->js($path.'/js/grade-board.js');
 			<div class="input-group">
 				<input type="text" class="form-control" name="grade_name" value="<?php echo $row['name']; ?>" />
 				<div class="input-group-btn">
-					<button class="btn btn-primary" type="button">Update</button>
+					<button class="btn btn-primary" type="submit">Update</button>
 					
 					<?php if (
 						(
@@ -28,7 +28,7 @@ $this->model->js($path.'/js/grade-board.js');
 						($row['default'] == 'f')
 					) { ?>
 					<button class="btn btn-default" type="button" onclick="clickDefault(this.form)">Default</button>
-					<button class="btn btn-danger" type="button">Delete</button>
+					<button class="btn btn-danger" type="button" onclick="clickDelete(this.form)">Delete</button>
 					<?php } ?>
 				</div>
 			</div>
