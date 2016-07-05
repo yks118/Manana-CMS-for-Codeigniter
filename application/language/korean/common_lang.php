@@ -7,6 +7,12 @@ $lang['system_auth_danger'] = '권한이 존재하지 않습니다.';
 $lang['system_write_success'] = '추가되었습니다.';
 $lang['system_update_success'] = '수정되었습니다.';
 $lang['system_delete_success'] = '삭제되었습니다.';
+$lang['system_mkdir_danger'] = '폴더 생성에 실패하였습니다.';
+$lang['system_file_upload_success'] = '파일이 업로드되었습니다.';
+$lang['system_file_delete_question'] = '파일을 삭제하시겠습니까?';
+$lang['system_file_delete_success'] = '파일 삭제에 성공하였습니다.';
+$lang['system_file_delete_danger'] = '파일 삭제에 실패하였습니다.';
+$lang['system_download_danger_empty'] = '파일이 존재하지 않습니다.';
 
 // text
 $lang['text_submit'] = '확인';
@@ -28,6 +34,12 @@ $lang['text_not_use'] = '미사용';
 $lang['text_default_secret'] = '비밀글 강제 여부';
 $lang['text_comment_use_secret'] = '코멘트 비밀글 사용 여부';
 $lang['text_comment_default_secret'] = '코멘트 비밀글 강제 여부';
+$lang['text_title'] = '제목';
+$lang['text_favicon'] = '파비콘';
+$lang['text_file_upload'] = '파일 업로드';
+$lang['text_file_download'] = '파일 다운로드';
+$lang['text_delete'] = '삭제';
+$lang['text_number'] = '번호';
 
 // site
 $lang['site_name'] = '사이트 이름';
@@ -41,6 +53,7 @@ $lang['site_robots_false'] = '검색로봇 미허용';
 $lang['site_login_username'] = 'ID 로그인';
 $lang['site_login_email'] = 'E-Mail 로그인';
 $lang['site_write_success'] = '사이트가 생성되었습니다.';
+$lang['site_default_editor'] = '기본 에디터';
 
 // member
 $lang['member_username'] = '아이디';
@@ -62,5 +75,8 @@ $lang['admin_menu_member'] = '회원관리';
 $lang['admin_menu_member_grade'] = '등급 관리';
 $lang['admin_menu_board'] = '게시판 설정';
 $lang['admin_menu_site'] = '사이트 관리';
+$lang['admin_menu_page'] = '페이지 관리';
+$lang['admin_menu_file'] = '파일 관리';
+$lang['admin_menu_file_setting'] = '업로드 설정';
 $lang['admin_module_install_success'] = '모듈이 설치되었습니다.';
 $lang['admin_module_install_error'] = '모듈 설치에 실패하였습니다.';

@@ -25,12 +25,6 @@ class Model extends CI_Model {
 		
 		// 메뉴 설정
 		$this->menu = $this->_menu($this->uri->segment(1));
-		
-		if ($this->uri->segment(1) == 'admin') {
-			$this->menu['site']['name'] = lang('admin_menu_site');
-			$this->menu['site']['href'] = base_url('/admin/site/');
-			$this->menu['site']['target'] = '_self';
-		}
 	}
 	
 	/**
@@ -53,6 +47,7 @@ class Model extends CI_Model {
 		$this->js('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js','footer');
 		$this->js($this->path.'/js/bootstrap-notify/bootstrap-notify.js','footer');
 		$this->js($this->path.'/js/autosize/autosize.js','footer');
+		$this->js($this->path.'/js/jquery.cookie.js','footer');
 		$this->js($this->path.'/js/common.js','footer');
 	}
 	
@@ -71,6 +66,10 @@ class Model extends CI_Model {
 			$menu_data['dashboard']['name'] = lang('admin_menu_dashboard');
 			$menu_data['dashboard']['href'] = base_url('/admin/dashboard/');
 			$menu_data['dashboard']['target'] = '_self';
+			
+			$menu_data['site']['name'] = lang('admin_menu_site');
+			$menu_data['site']['href'] = base_url('/admin/site/');
+			$menu_data['site']['target'] = '_self';
 		} else {
 			
 			if ($segment && isset($menu_data[$segment]['name'])) {
@@ -120,6 +119,53 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * pagination
+	 * 
+	 * 페이지 설정
+	 */
+	public function pagination ($total,$per_page = 20) {
+		// load library pagination
+		$this->load->library('pagination');
+		
+		$pagination = '';
+		$config = array();
+		
+		$config['base_url'] = base_url('/'.$_SERVER['REQUEST_URI']);
+		$config['total_rows'] = $total;
+		$config['per_page'] = $per_page;
+		$config['use_page_numbers'] = TRUE;
+		$config['page_query_string'] = TRUE;
+		$config['query_string_segment'] = 'page';
+		
+		$config['total_num_link'] = 10;
+		
+		$config['full_tag_open'] = '<ul class="pagination">';
+		$config['full_tag_close'] = '</ul>';
+		$config['cur_tag_open'] = '<li class="active"><a>';
+		$config['cur_tag_close'] = '</a></li>';
+		$config['num_tag_open'] = '<li>';
+		$config['num_tag_close'] = '</li>';
+		$config['prev_link'] = '&lsaquo;';
+		$config['prev_tag_open'] = '<li>';
+		$config['prev_tag_close'] = '</li>';
+		$config['next_link'] = '&rsaquo;';
+		$config['next_tag_open'] = '<li>';
+		$config['next_tag_close'] = '</li>';
+		$config['first_link'] = '&laquo;';
+		$config['first_tag_open'] = '<li>';
+		$config['first_tag_close'] = '</li>';
+		$config['last_link'] = '&raquo;';
+		$config['last_tag_open'] = '<li>';
+		$config['last_tag_close'] = '</li>';
+		
+		$this->pagination->initialize($config);
+		
+		$pagination = $this->pagination->create_links();
+		
+		return $pagination;
+	}
+	
+	/**
 	 * read_site_url
 	 * 
 	 * site 테이블을 url로 가져옴
@@ -146,6 +192,13 @@ class Model extends CI_Model {
 		$site_member_grade_row = $this->db->get()->row_array();
 		
 		$data['admin_grade_id'] = $site_member_grade_row['id'];
+		
+		// get favicon
+		$data['favicon'] = $this->file->read_model('site_favicon',$data['id']);
+		
+		if (isset($data['favicon'][0])) {
+			$data['favicon'] = $data['favicon'][0];
+		}
 		
 		return $data;
 	}
@@ -536,6 +589,11 @@ class Model extends CI_Model {
 					'member_id'=>array(
 						'type'=>'INT',
 						'constraint'=>11
+					),
+					'default_editor'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255,
+						'default'=>'ckeditor'
 					)
 				);
 				$this->dbforge->add_field($fields);

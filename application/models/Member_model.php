@@ -859,6 +859,7 @@ class Member_model extends CI_Model {
 		
 		$return = $this->dbforge->drop_table('member');
 		if ($return) {
+			$this->dbforge->drop_table('member_grade');
 			$this->dbforge->drop_table('member_information');
 			$this->dbforge->drop_table('login_log');
 		}

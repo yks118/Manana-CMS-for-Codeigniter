@@ -143,3 +143,36 @@ function datetime ($datetime) {
 	
 	return $datetime;
 }
+
+/**
+ * language
+ * 
+ * @param	string		$language
+ * @param	numberic	$length
+ */
+function language ($language,$length = 2) {
+	$lang = '';
+	
+	if ($length == 2) {
+		$lang = substr($language,0,2);
+	} else if ($length == 4) {
+		
+	}
+	
+	return $lang;
+}
+
+/**
+ * html_path
+ * 
+ * html path로 리턴
+ * 
+ * @param	string		$path
+ */
+function html_path ($path) {
+	$html_path = '';
+	
+	$html_path = base_url(substr($path,1));
+	
+	return $html_path;
+}

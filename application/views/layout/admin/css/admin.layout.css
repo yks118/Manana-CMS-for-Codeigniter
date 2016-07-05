@@ -67,11 +67,17 @@
 #adminLayout #lnbLayout ul li.lnb a.lnb {
   font-size: 16px;
 }
+#adminLayout #lnbLayout ul li.lnb ul {
+  display: none;
+}
 #adminLayout #lnbLayout ul li.lnb ul li.snb a.snb {
   padding-left: 30px;
 }
 #adminLayout #lnbLayout ul li.lnb.active a.lnb {
   color: #000;
+}
+#adminLayout #lnbLayout ul li.lnb.active ul {
+  display: block;
 }
 #adminLayout #lnbLayout ul li.lnb.active ul li.snb.active a.snb {
   color: #000;

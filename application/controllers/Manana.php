@@ -35,6 +35,8 @@ class Manana extends CI_Controller {
 		for (var i = 0; i < csrf.length; i++) {
 			csrf[i].value = "'.$this->security->get_csrf_hash().'";
 		}
+		
+		parent.csrf["'.$this->security->get_csrf_token_name().'"] = "'.$this->security->get_csrf_hash().'";
 		';
 		
 		echo js($js);
@@ -53,5 +55,26 @@ Disallow: ';
 			echo 'User-agent: *
 Disallow: /';
 		}
+	}
+	
+	/**
+	 * language
+	 * 
+	 * 언어 설정 리턴
+	 */
+	public function language () {
+		$data = array();
+		
+		$data['text'] = $this->input->post('text');
+		$data['file'] = $this->input->post('file');
+		$data['language'] = $this->input->post('language');
+		
+		if ($data['file'] != 'common') {
+			$this->lang->load($data['file'],$data['language']);
+		}
+		
+		$data['lang'] = $this->lang->line($data['text']);
+		
+		echo json_encode($data);
 	}
 }

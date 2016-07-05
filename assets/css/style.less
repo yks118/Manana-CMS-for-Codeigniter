@@ -19,6 +19,7 @@ html {
         
         ul.list-table-td {
           line-height:2em;
+          border-bottom:1px solid #ddd;
         }
       }
     }
@@ -34,6 +35,49 @@ html {
           background-color:#fff;
         }
       }
+    }
+    
+    /* Bootstrap Growl */
+    [data-growl="container"] {
+      white-space:nowrap;
+      
+      [data-growl="message"] {
+        p {
+          margin:0px;
+        }
+      }
+    }
+    
+    ul.files {
+      margin-bottom:15px;
+    }
+    
+    /* file upload thumbnails */
+    ul.files.thumbnails {
+      margin-top:-15px;
+      margin-bottom:0px;
+      
+      li {
+        margin-top:15px;
+        margin-bottom:15px;
+        
+        img {
+          border-top-right-radius:4px;
+          border-top-left-radius:4px;
+          max-width:100%;
+        }
+        
+        .btn {
+          border-top-right-radius:0px;
+          border-top-left-radius:0px;
+        }
+      }
+    }
+    
+    /* pagination */
+    ul.pagination {
+      margin-top:0px;
+      margin-bottom:10px;
     }
   }
 }

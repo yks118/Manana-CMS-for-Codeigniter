@@ -6,7 +6,7 @@ class MY_Router extends CI_Router {
 		parent::__construct();
 		
 		$uris = $admin_method = array();
-		$uris = explode('/',trim($_SERVER['REQUEST_URI'],'/'));
+		$uris = explode('/',trim(preg_replace('/([^\?]+).*/i','$1',$_SERVER['REQUEST_URI']),'/'));
 		
 		$admin_method[] = 'dashboard';
 		$admin_method[] = 'install';

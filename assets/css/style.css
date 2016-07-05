@@ -3,6 +3,9 @@ html body {
   background-color: #edecec;
   min-height: 100vh;
   position: relative;
+  /* Bootstrap Growl */
+  /* file upload thumbnails */
+  /* pagination */
 }
 html body iframe#hIframe {
   display: none;
@@ -14,6 +17,7 @@ html body ul.list-table li ul.list-table-th {
 }
 html body ul.list-table li ul.list-table-td {
   line-height: 2em;
+  border-bottom: 1px solid #ddd;
 }
 html body ul.list-table.list-table-hover li ul.list-table-td {
   background-color: transparent;
@@ -21,6 +25,36 @@ html body ul.list-table.list-table-hover li ul.list-table-td {
 }
 html body ul.list-table.list-table-hover li ul.list-table-td:hover {
   background-color: #fff;
+}
+html body [data-growl="container"] {
+  white-space: nowrap;
+}
+html body [data-growl="container"] [data-growl="message"] p {
+  margin: 0px;
+}
+html body ul.files {
+  margin-bottom: 15px;
+}
+html body ul.files.thumbnails {
+  margin-top: -15px;
+  margin-bottom: 0px;
+}
+html body ul.files.thumbnails li {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+html body ul.files.thumbnails li img {
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  max-width: 100%;
+}
+html body ul.files.thumbnails li .btn {
+  border-top-right-radius: 0px;
+  border-top-left-radius: 0px;
+}
+html body ul.pagination {
+  margin-top: 0px;
+  margin-bottom: 10px;
 }
 /* loop default */
 .mt0 {

@@ -87,15 +87,9 @@ class manana_hook {
 		$output = $this->CI->output->get_output();
 		
 		// json check
-		$json = json_decode($output);
+		$json = json_decode('"'.$output.'"');
 		if (json_last_error() === JSON_ERROR_NONE) {
 			// json
-			
-			// set csrf
-			$json[$this->CI->security->get_csrf_token_name()] = $this->CI->security->get_csrf_hash();
-			
-			// encode json
-			$output = json_encode($json);
 		} else {
 			// html
 			$this->CI->model->html['site_lang'] = $this->site_lang;
@@ -122,7 +116,6 @@ class manana_hook {
 	 * @param	string	$config_language	korean / japanese / english
 	 */
 	private function _language ($config_language) {
-		$language = 'english';
 		$cookie_prefix = $GLOBALS['CFG']->config['cookie_prefix'];
 		
 		if (isset($_COOKIE[$cookie_prefix.'language'])) {
@@ -172,6 +165,7 @@ class manana_hook {
 			}
 		}
 		
+		setcookie($cookie_prefix.'language',$language);
 		$GLOBALS['CFG']->config['language'] = $language;
 	}
 }

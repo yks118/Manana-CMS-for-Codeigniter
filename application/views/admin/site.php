@@ -67,6 +67,33 @@
 		</label>
 	</div>
 	
+	<div class="form-group">
+		<label for="site_default_editor"><?php echo lang('site_default_editor'); ?></label>
+		<select class="form-control">
+			<?php foreach ($editor_list as $value) { ?>
+			<option value="<?php echo $value; ?>"><?php echo $value; ?></option>
+			<?php } ?>
+		</select>
+	</div>
+	
+	<div class="form-group">
+		<label for="file_favicon"><?php echo lang('text_favicon'); ?></label>
+		<?php if (isset($data['favicon']['id'])) { ?>
+		<ul class="list-unstyled files thumbnails">
+			<li class="text-center">
+				<img src="<?php echo html_path($data['favicon']['path']); ?>" alt="<?php echo $data['favicon']['name']; ?>" />
+			</li>
+		</ul>
+		<?php } ?>
+		<div>
+			<?php if (isset($data['favicon']['id'])) { ?>
+			<button type="button" class="btn btn-danger" onclick="clickFileDelete(this.form,<?php echo $data['favicon']['id']; ?>,'refresh')"><?php echo lang('text_delete'); ?></button>
+			<?php } else { ?>
+			<button type="button" class="btn btn-default" onclick="clickFileUpload(this.form,'site_favicon',<?php echo $data['id']; ?>,'refresh')"><?php echo lang('text_file_upload'); ?></button>
+			<?php } ?>
+		</div>
+	</div>
+	
 	<div class="text-right">
 		<button type="submit" class="btn btn-primary"><?php echo lang('text_submit'); ?></button>
 	</div>

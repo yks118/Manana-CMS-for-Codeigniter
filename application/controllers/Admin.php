@@ -59,6 +59,7 @@ class Admin extends CI_Controller {
 		$data = array();
 		
 		$data['data'] = $this->model->read_site_url(base_url('/'));
+		$data['editor_list'] = $this->editor->read_list();
 		
 		$this->load->view('admin/site',$data);
 	}
