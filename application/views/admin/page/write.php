@@ -9,40 +9,50 @@
 	
 	<div class="form-group">
 		<label for="page_title"><?php echo lang('text_title'); ?></label>
-		<input type="text" class="form-control" id="page_title" name="page_title" maxlength="255" required="required" autofocus="autofocus" value="<?php echo (isset($data['name']))?$data['name']:''; ?>" />
+		<input type="text" class="form-control" id="page_title" name="page_title" maxlength="255" required="required" autofocus="autofocus" value="<?php echo (isset($data['title']))?$data['title']:''; ?>" />
 	</div>
 	
 	<div class="form-group">
-		<textarea name="page_document" id="page_document"></textarea>
+		<textarea name="page_document" id="page_document"><?php echo (isset($data['document']))?$data['document']:''; ?></textarea>
 	</div>
 	
 	<div class="form-group">
 		<button type="button" class="btn btn-default" onclick="clickFileUpload(this.form,'page')">File Upload</button>
 	</div>
 	
-	<ul class="list-unstyled files">
-		<li>
+	<ul class="list-inline files">
+		<?php foreach ($data['files'] as $row) {
+			if (empty($row['is_image'])) { ?>
+		<li data-file-id="<?php echo $row['id']; ?>">
 			<div class="btn-group">
-				<button class="btn btn-default">file name</button>
-				<button class="btn btn-danger">Delete</button>
+				<button type="button" class="btn btn-default" onclick="clickInsertEditorHTML('page_document',<?php echo $row['id']; ?>,'<?php echo $row['name']; ?>')">
+					<?php echo $row['name']; ?>
+				</button>
+				<button type="button" class="btn btn-danger" onclick="clickFileDelete(this.form,<?php echo $row['id']; ?>)"><?php echo lang('text_delete'); ?></button>
 			</div>
 		</li>
+			<?php }
+		} ?>
 	</ul>
 	
 	<ul class="list-unstyled files thumbnails row" data-li-class="col-lg-3 col-md-3 col-sm-4 col-xs-12">
-		<?php for ($i = 0; $i <= 4; $i++) { ?>
-		<li class="col-lg-3 col-md-3 col-sm-4 col-xs-12">
-			<img src="/upload/koikake068.png" />
+		<?php foreach ($data['files'] as $row) {
+			if ($row['is_image']) { ?>
+		<li class="col-lg-3 col-md-3 col-sm-4 col-xs-12" data-file-id="<?php echo $row['id']; ?>">
+			<img src="<?php echo html_path($row['path']); ?>" alt="<?php echo $row['name']; ?>" />
 			<div class="btn-group btn-group-justified">
 				<div class="btn-group">
-					<button class="btn btn-default">Insert</button>
+					<button type="button" class="btn btn-default" onclick="clickInsertEditorHTML('page_document',<?php echo $row['id']; ?>,'<?php echo $row['name']; ?>','<?php echo $row['path']; ?>')">
+						<?php echo $row['name']; ?>
+					</button>
 				</div>
 				<div class="btn-group">
-					<button class="btn btn-danger">Delete</button>
+					<button type="button" class="btn btn-danger" onclick="clickFileDelete(this.form,<?php echo $row['id']; ?>)"><?php echo lang('text_delete'); ?></button>
 				</div>
 			</div>
 		</li>
-		<?php } ?>
+			<?php }
+		} ?>
 	</ul>
 	
 	<div class="text-right">

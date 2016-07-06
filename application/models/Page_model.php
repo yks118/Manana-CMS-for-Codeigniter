@@ -20,12 +20,31 @@ class Page_model extends CI_Model {
 	 * 사이트에 등록된 페이지의 총 수
 	 * 
 	 * @param	numberic	$site_id	ci_site.id
+	 * @param	array		$field
+	 * @param	array		$keyword
 	 */
-	public function read_total ($site_id = 0) {
+	public function read_total ($site_id = 0,$field = array(),$keyword = array()) {
 		$total = 0;
+		$fields = $keywords = array();
 		
 		if (empty($site_id)) {
 			$site_id = $this->model->site['id'];
+		}
+		
+		if (is_array($field)) {
+			$fields = $field;
+		} else {
+			$fields[] = $field;
+		}
+		
+		if (is_array($keyword)) {
+			$keywords = $keyword;
+		} else {
+			$keywords[] = $keyword;
+		}
+		
+		foreach ($fields as $key => $value) {
+			$this->db->like($fields[$key],$keywords[$key]);
 		}
 		
 		$this->db->where('site_id',$site_id);
@@ -38,15 +57,183 @@ class Page_model extends CI_Model {
 	 * read_list
 	 * 
 	 * ci_page의 리스트를 리턴
+	 * 
+	 * @param	numberic	$total
+	 * @param	numberic	$limit
+	 * @param	numberic	$page
+	 * @param	array		$field
+	 * @param	array		$keyword
 	 */
-	public function read_list () {
-		$list = array();
+	public function read_list ($total,$limit = 20,$page = 1,$field = array(),$keyword = array()) {
+		$offset = 0;
+		$list = $result = $fields = $keywords = array();
+		
+		if (empty($page)) {
+			$page = 1;
+		}
+		
+		if (is_array($field)) {
+			$fields = $field;
+		} else {
+			$fields[] = $field;
+		}
+		
+		if (is_array($keyword)) {
+			$keywords = $keyword;
+		} else {
+			$keywords[] = $keyword;
+		}
+		
+		$offset = ($page - 1) * $limit;
 		
 		$this->db->select('*');
 		$this->db->from('page');
-		$list = $this->db->get()->result_array();
+		
+		foreach ($fields as $key => $value) {
+			$this->db->like($fields[$key],$keywords[$key]);
+		}
+		
+		$this->db->order_by('id','DESC');
+		$this->db->offset($offset);
+		$this->db->limit($limit);
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $key => $row) {
+			$row['number'] = $total - ($limit * ($page - 1)) - $key;
+			
+			$list[] = $row;
+		}
 		
 		return $list;
+	}
+	
+	/**
+	 * read_id
+	 * 
+	 * ci_page의 데이터를 리턴
+	 * 
+	 * @param	numberic	$id		ci_page.id
+	 */
+	public function read_id ($id) {
+		$data = array();
+		
+		// ci_page
+		$this->db->select('*');
+		$this->db->from('page');
+		$this->db->where('id',$id);
+		$this->db->limit(1);
+		$data = $this->db->get()->row_array();
+		
+		// ci_file
+		$data['files'] = array();
+		$data['files'] = $this->file->read_model('page',$id);
+		
+		return $data;
+	}
+	
+	/**
+	 * write_data
+	 * 
+	 * page write
+	 * 
+	 * @param	array	$data
+	 */
+	public function write_data ($data) {
+		$result = array();
+		
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = $this->model->site['id'];
+		}
+		
+		if (!isset($data['member_id'])) {
+			$data['member_id'] = $this->member->data['id'];
+		}
+		
+		if (!isset($data['write_datetime'])) {
+			$data['write_datetime'] = $data['update_datetime'] = date('Y-m-d H:i:s');
+		}
+		
+		if (!isset($data['ip'])) {
+			$data['ip'] = $this->input->ip_address();
+		}
+		
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
+		}
+		
+		if ($this->db->insert('page',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+			$result['insert_id'] = $this->db->insert_id();
+			
+			$this->update_data(array('page_id'=>$result['insert_id'],'update_datetime'=>$data['update_datetime']),$result['insert_id']);
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_data
+	 * 
+	 * page update
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_page.id
+	 */
+	public function update_data ($data,$id) {
+		$result = array();
+		
+		if (!isset($data['update_datetime'])) {
+			$data['update_datetime'] = date('Y-m-d H:i:s');
+		}
+		
+		$this->db->where('id',$id);
+		if ($this->db->update('page',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * delete
+	 * 
+	 * page delete
+	 * 
+	 * @param	numberic	$id		ci_page.id
+	 */
+	public function delete ($id) {
+		$result = $ids = array();
+		
+		if (is_array($id)) {
+			$ids = $id;
+		} else {
+			$ids[] = $id;
+		}
+		
+		foreach ($ids as $value) {
+			$this->db->where('id',$value);
+			if ($this->db->delete('page')) {
+				$result['status'] = TRUE;
+				$result['message'] = lang('system_delete_success');
+			} else {
+				$result['status'] = FALSE;
+				$result['message'] = $this->db->_error_message();
+				$result['number'] = $this->db->_error_number();
+				break;
+			}
+		}
+		
+		return $result;
 	}
 	
 	/**

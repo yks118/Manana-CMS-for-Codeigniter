@@ -76,11 +76,11 @@ function file_upload (id,name,path,size,is_image) {
 	var html = insert_html = fid = '';
 	
 	fid = jQuery(form).attr('id');
-	console.log(id+'/'+name+'/'+path+'/'+size+'/'+is_image);
+	
 	if (is_image == "1") {
 		// image
-		html += '<li class="'+jQuery(form).find('ul.files.thumbnails').data('li-class')+'">';
-			html += '<img src="'+path+'" alt="'+name+'" />';
+		html += '<li class="'+jQuery(form).find('ul.files.thumbnails').data('li-class')+'" data-file-id="'+id+'">';
+			html += '<img src="'+site_url+path.substring(1)+'" alt="'+name+'" />';
 			html += '<div class="btn-group btn-group-justified">';
 				html += '<div class="btn-group">';
 					html += '<button class="btn btn-default">Insert</button>';
@@ -90,17 +90,21 @@ function file_upload (id,name,path,size,is_image) {
 				html += '</div>';
 			html += '</div>';
 		html += '</li>';
+		
+		jQuery(form).find('ul.list-unstyled.files.thumbnails').append(html);
 	} else {
 		// file
-		html += '<li>';
+		html += '<li data-file-id="'+id+'">';
 			html += '<div class="btn-group">';
 				html += '<button class="btn btn-default" onclick="write_editor_html(\''+fid+'\')">'+name+'</button>';
 				html += '<button class="btn btn-danger" onclick="clickFileDelete(this.form,'+id+')">Delete</button>';
 			html += '</div>';
 		html += '</li>';
 		
-		jQuery(form).find('ul.list-unstyled.files').append(html);
+		jQuery(form).find('ul.list-inline.files').append(html);
 	}
+	
+	document.getElementById('file_ids').value = (document.getElementById('file_ids').value)?document.getElementById('file_ids').value+'|'+id:id;
 }
 
 /**
@@ -129,7 +133,7 @@ function clickFileDelete (f,id,action) {
 					if (action == 'refresh') {
 						document.location.href = document.location.href;
 					} else {
-						
+						jQuery(f).find('[data-file-id="'+id+'"]').remove();
 					}
 				} else {
 					notify(response.message,'danger');
@@ -137,6 +141,30 @@ function clickFileDelete (f,id,action) {
 			}
 		});
 	}
+}
+
+/**
+ * clickInsertEditorHTML
+ * 
+ * editor에 html을 생성하여 추가합니다.
+ * 
+ * @param	{string}	editor_id
+ * @param	{numberic}	id
+ * @param	{string}	name
+ * @param	{string}	path
+ */
+function clickInsertEditorHTML (editor_id,id,name,path) {
+	var html = '';
+	
+	if (path) {
+		// image
+		html = '<img src="'+path.substring(1)+'" alt="'+name+'" />';
+	} else {
+		// file
+		html = '<a target="hIframe" href="'+site_url+'/file/download/'+id+'">'+name+'</a>';
+	}
+	
+	write_editor_html(editor_id,html);
 }
 
 /**

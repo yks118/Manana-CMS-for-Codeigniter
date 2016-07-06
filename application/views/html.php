@@ -11,6 +11,11 @@
 		<link rel="canonical" href="<?php echo current_url(); ?>" />
 		<link rel="alternate" hreflang="x-default" href="<?php echo current_url(); ?>" />
 		
+		<?php if (isset($this->model->site['favicon']['path'])) { ?>
+		<!-- favicon -->
+		<link rel="icon" type="<?php echo $this->model->site['favicon']['type']; ?>" href="<?php echo html_path($this->model->site['favicon']['path']); ?>" />
+		<?php } ?>
+		
 		<?php if ($this->model->site['robots'] == 't') { ?>
 		<meta name="robots" content="all" />
 		<?php } else { ?>

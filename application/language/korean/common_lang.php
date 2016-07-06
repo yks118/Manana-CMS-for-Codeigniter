@@ -6,6 +6,7 @@ $lang['system_connect_danger'] = '잘못된 접근입니다.';
 $lang['system_auth_danger'] = '권한이 존재하지 않습니다.';
 $lang['system_write_success'] = '추가되었습니다.';
 $lang['system_update_success'] = '수정되었습니다.';
+$lang['system_delete_question'] = '삭제하시겠습니까?';
 $lang['system_delete_success'] = '삭제되었습니다.';
 $lang['system_mkdir_danger'] = '폴더 생성에 실패하였습니다.';
 $lang['system_file_upload_success'] = '파일이 업로드되었습니다.';
@@ -40,6 +41,7 @@ $lang['text_file_upload'] = '파일 업로드';
 $lang['text_file_download'] = '파일 다운로드';
 $lang['text_delete'] = '삭제';
 $lang['text_number'] = '번호';
+$lang['text_update'] = '수정';
 
 // site
 $lang['site_name'] = '사이트 이름';

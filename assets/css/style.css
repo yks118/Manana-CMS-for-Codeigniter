@@ -33,7 +33,10 @@ html body [data-growl="container"] [data-growl="message"] p {
   margin: 0px;
 }
 html body ul.files {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
+}
+html body ul.files li {
+  margin-bottom: 10px;
 }
 html body ul.files.thumbnails {
   margin-top: -15px;

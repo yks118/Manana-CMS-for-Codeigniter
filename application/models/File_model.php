@@ -114,6 +114,54 @@ class File_model extends CI_Model {
 	}
 	
 	/**
+	 * update_data
+	 * 
+	 * ci_file update
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id
+	 */
+	public function update_data ($data,$id) {
+		$result = array();
+		
+		$this->db->where('id',$id);
+		if ($this->db->update('file',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_data_batch
+	 * 
+	 * ci_file updates
+	 * 
+	 * @param	array	$data
+	 */
+	public function update_data_batch ($data) {
+		$update = 0;
+		$result = array();
+		
+		$update = $this->db->update_batch('file',$data,'id');
+		if ($update > 0) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * upload
 	 * 
 	 * file upload
