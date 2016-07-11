@@ -12,11 +12,16 @@ class Page extends CI_Controller {
 	 * page list
 	 */
 	public function admin_index () {
+		$limit = 20;
 		$data = array();
 		
 		$data['page'] = $this->input->get('page');
-		$data['total'] = $this->page->read_total();
-		$data['list'] = $this->page->read_list($data['total'],20,$data['page']);
+		$data['field'] = $this->input->get('field');
+		$data['keyword'] = $this->input->get('keyword');
+		$data['site_id'] = $this->model->site['site_id'];
+		$data['total'] = $this->page->read_total($data['site_id'],$data['field'],$data['keyword']);
+		$data['list'] = $this->page->read_list($data['total'],$limit,$data['page'],$data['site_id'],$data['field'],$data['keyword']);
+		$data['pagination'] = $this->model->pagination($data['total'],$limit);
 		
 		$this->load->view('admin/page/list',$data);
 	}
@@ -48,11 +53,13 @@ class Page extends CI_Controller {
 		$result = $this->page->write_data($data);
 		
 		foreach ($file_ids as $value) {
-			$file_data[] = array(
-				'id'=>$value,
-				'model'=>'page',
-				'model_id'=>$result['insert_id']
-			);
+			if ($value) {
+				$file_data[] = array(
+					'id'=>$value,
+					'model'=>'page',
+					'model_id'=>$result['insert_id']
+				);
+			}
 		}
 		
 		if (count($file_data)) {
@@ -93,16 +100,19 @@ class Page extends CI_Controller {
 	 */
 	public function admin_updateForm () {
 		$id = 0;
-		$result = $data = array();
+		$language = '';
+		$result = $data = $page_data = array();
 		
 		$id = $this->input->post('page_id');
+		$language = $this->input->post('language');
 		$data = delete_prefix($this->model->post_data('page_','page_id'),'page_');
 		
-		$result = $this->page->update_data($data,$id);
+		$page_data = $this->page->read_id($id);
+		$result = ($page_data['language'] == $language)?$this->page->update_data($data,$id):$this->page->write_data($data);
 		
 		if ($result['status']) {
 			// success
-			set_cookie('noti',$result['message'],0);
+			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
 			echo js('parent.document.location.href = "'.base_url('/admin/page/update/'.$id.'/').'";');
 		} else {

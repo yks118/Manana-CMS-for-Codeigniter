@@ -28,7 +28,7 @@ class Page_model extends CI_Model {
 		$fields = $keywords = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		if (is_array($field)) {
@@ -44,11 +44,14 @@ class Page_model extends CI_Model {
 		}
 		
 		foreach ($fields as $key => $value) {
-			$this->db->like($fields[$key],$keywords[$key]);
+			if (isset($fields[$key])) {
+				$this->db->like($fields[$key],$keywords[$key],'both');
+			}
 		}
 		
 		$this->db->where('site_id',$site_id);
-		$total = $this->db->count_all_results('page');
+		$this->db->group_by('page_id');
+		$total = $this->db->get('page')->num_rows();
 		
 		return $total;
 	}
@@ -61,15 +64,21 @@ class Page_model extends CI_Model {
 	 * @param	numberic	$total
 	 * @param	numberic	$limit
 	 * @param	numberic	$page
+	 * @param	numberic	$site_id		ci_site.id
 	 * @param	array		$field
 	 * @param	array		$keyword
 	 */
-	public function read_list ($total,$limit = 20,$page = 1,$field = array(),$keyword = array()) {
+	public function read_list ($total,$limit = 20,$page = 1,$site_id = 0,$field = array(),$keyword = array()) {
 		$offset = 0;
+		$query = '';
 		$list = $result = $fields = $keywords = array();
 		
 		if (empty($page)) {
 			$page = 1;
+		}
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		if (is_array($field)) {
@@ -86,19 +95,25 @@ class Page_model extends CI_Model {
 		
 		$offset = ($page - 1) * $limit;
 		
-		$this->db->select('*');
-		$this->db->from('page');
+		$this->db->select(write_prefix_db($this->db->list_fields('page'),array('p','pj')));
+		$this->db->from('page p');
+		$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$this->config->item('language').'"','LEFT');
 		
 		foreach ($fields as $key => $value) {
-			$this->db->like($fields[$key],$keywords[$key]);
+			if (isset($fields[$key])) {
+				$this->db->like('pj.'.$fields[$key],$keywords[$key],'both');
+			}
 		}
 		
-		$this->db->order_by('id','DESC');
+		$this->db->where('p.site_id',$site_id);
+		$this->db->group_by('p.page_id');
+		$this->db->order_by('p.page_id','DESC');
 		$this->db->offset($offset);
 		$this->db->limit($limit);
 		$result = $this->db->get()->result_array();
 		
 		foreach ($result as $key => $row) {
+			$row = read_prefix_db($row,'pj');
 			$row['number'] = $total - ($limit * ($page - 1)) - $key;
 			
 			$list[] = $row;
@@ -115,14 +130,14 @@ class Page_model extends CI_Model {
 	 * @param	numberic	$id		ci_page.id
 	 */
 	public function read_id ($id) {
+		$language = $this->config->item('language');
 		$data = array();
 		
 		// ci_page
 		$this->db->select('*');
 		$this->db->from('page');
-		$this->db->where('id',$id);
-		$this->db->limit(1);
-		$data = $this->db->get()->row_array();
+		$this->db->where('page_id',$id);
+		$data = language_data($language,$this->db->get()->result_array());
 		
 		// ci_file
 		$data['files'] = array();
@@ -142,7 +157,7 @@ class Page_model extends CI_Model {
 		$result = array();
 		
 		if (!isset($data['site_id'])) {
-			$data['site_id'] = $this->model->site['id'];
+			$data['site_id'] = $this->model->site['site_id'];
 		}
 		
 		if (!isset($data['member_id'])) {
@@ -166,7 +181,9 @@ class Page_model extends CI_Model {
 			$result['message'] = lang('system_write_success');
 			$result['insert_id'] = $this->db->insert_id();
 			
-			$this->update_data(array('page_id'=>$result['insert_id'],'update_datetime'=>$data['update_datetime']),$result['insert_id']);
+			if (!isset($data['page_id'])) {
+				$this->update_data(array('page_id'=>$result['insert_id'],'update_datetime'=>$data['update_datetime']),$result['insert_id']);
+			}
 		} else {
 			$result['status'] = FALSE;
 			$result['message'] = $this->db->_error_message();

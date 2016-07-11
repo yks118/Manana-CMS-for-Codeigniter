@@ -32,4 +32,26 @@ $this->model->js($path.'/js/page.js');
 	<div class="text-right">
 		<a class="btn btn-primary" target="_self" href="<?php echo base_url('/admin/page/write/'); ?>"><?php echo lang('text_add'); ?></a>
 	</div>
+	
+	<div class="text-center"><?php echo $pagination; ?></div>
+	
+	<?php
+	$attributes = array('name'=>'fsearch','id'=>'fsearch','target'=>'_self','method'=>'get');
+	echo form_open_multipart(base_url('/admin/page/'),$attributes);
+	?>
+	
+	<div class="text-center form-inline">
+		<div class="input-group">
+			<select class="form-control" name="field">
+				<option value="title"><?php echo lang('text_title'); ?></option>
+				<option value="document"><?php echo lang('text_document'); ?></option>
+			</select>
+			<input type="text" class="form-control" name="keyword" id="keyword" required="required" value="<?php echo $this->input->get('keyword'); ?>" />
+			<span class="input-group-btn">
+				<button type="submit" class="btn btn-primary"><?php echo lang('text_submit'); ?></button>
+			</span>
+		</div>
+	</div>
+	
+	<?php echo form_close(); ?>
 </section>

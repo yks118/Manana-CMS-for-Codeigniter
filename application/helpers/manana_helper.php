@@ -54,7 +54,7 @@ function read_folder_list ($path) {
 	
 	if ($handle = opendir($path)) {
 		while (false !== ($entry = readdir($handle))) {
-			if ($entry != '.' && $entry != '..') {
+			if ($entry != '.' && $entry != '..' && is_dir($path.$entry)) {
 				$list[] = $entry;
 			}
 		}
@@ -110,6 +110,61 @@ function write_prefix ($data,$prefix) {
 }
 
 /**
+ * read_prefix_db
+ * 
+ * array로 된 배열을 필요한것만 가공해서 리턴 (DB에서 사용)
+ * 
+ * @param	array	$data
+ * @param	array	$prefix
+ */
+function read_prefix_db ($data,$prefix) {
+	$row = array();
+	
+	if (isset($data[$prefix.'_id'])) {
+		foreach ($data as $key => $value) {
+			if ($key && (strpos($key,$prefix) !== FALSE && strpos($key,$prefix) == 0)) {
+				$row[preg_replace('/^[^_]+_(.+)/i','$1',$key)] = $value;
+			}
+		}
+	} else {
+		foreach ($data as $key => $value) {
+			if ($key && !(strpos($key,$prefix) !== FALSE && strpos($key,$prefix) == 0)) {
+				$row[preg_replace('/^[^_]+_(.+)/i','$1',$key)] = $value;
+			}
+		}
+	}
+	
+	return $row;
+}
+
+/**
+ * write_prefix_db
+ * 
+ * array로 된 배열을 prefix를 붙인 string으로 리턴 (DB에서 사용)
+ * 
+ * @param	array	$data
+ * @param	array	$prefix
+ */
+function write_prefix_db ($data,$prefix) {
+	$string = '';
+	$prefixes = array();
+	
+	if (is_array($prefix)) {
+		$prefixes = $prefix;
+	} else {
+		$prefixes[] = $prefix;
+	}
+	
+	foreach ($data as $field) {
+		foreach ($prefixes as $prefix) {
+			$string .= ','.$prefix.'.'.$field.' AS '.$prefix.'_'.$field;
+		}
+	}
+	
+	return mb_substr($string,1);
+}
+
+/**
  * delete_prefix
  * 
  * 배열의 key에 존재하는 prefix를 제거
@@ -160,6 +215,31 @@ function language ($language,$length = 2) {
 	}
 	
 	return $lang;
+}
+
+/**
+ * language_data
+ * 
+ * data의 배열에서 language의 row를 리턴
+ * 
+ * @param	string		$language
+ * @param	array		$data
+ */
+function language_data ($language,$result) {
+	$data = array();
+	
+	foreach ($result as $key => $row) {
+		if (empty($key)) {
+			$data = $row;
+		}
+		
+		if ($language == $row['language']) {
+			$data = $row;
+			break;
+		}
+	}
+	
+	return $data;
 }
 
 /**

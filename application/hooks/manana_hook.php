@@ -163,9 +163,10 @@ class manana_hook {
 						$language = 'english';
 					break;
 			}
+			
+			setcookie($cookie_prefix.'language',$language,0,'/');
 		}
 		
-		setcookie($cookie_prefix.'language',$language);
 		$GLOBALS['CFG']->config['language'] = $language;
 	}
 }

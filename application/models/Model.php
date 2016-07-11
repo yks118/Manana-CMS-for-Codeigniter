@@ -166,6 +166,59 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * site_language
+	 * 
+	 * site_language update
+	 * 
+	 * @param	array		$data		languages
+	 * @param	numberic	$site_id	ci_site.id
+	 */
+	public function site_language ($data,$site_id = 0) {
+		$result = $language_data = $languages = $insert_data = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->site['site_id'];
+		}
+		
+		// get Site Language
+		$this->db->select('*');
+		$this->db->from('site_language');
+		$this->db->where('site_id',$site_id);
+		$language_data = $this->db->get()->result_array();
+		
+		foreach ($language_data as $row) {
+			$languages[] = $row['language'];
+			
+			if (!in_array($row['language'],$data)) {
+				$this->db->where('id',$row['language']);
+				$this->db->delete('site_language');
+			}
+		}
+		
+		foreach ($data as $language) {
+			if (!in_array($language,$languages)) {
+				$insert_data[] = array(
+					'site_id'=>$site_id,
+					'language'=>$language
+				);
+			}
+		}
+		
+		if (count($insert_data)) {
+			if ($this->db->insert_batch('site_language',$insert_data) > 0) {
+				$result['status'] = TRUE;
+				$result['message'] = lang('system_update_success');
+			} else {
+				$result['status'] = FALSE;
+				$result['message'] = $this->db->_error_message();
+				$result['number'] = $this->db->_error_number();
+			}
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * read_site_url
 	 * 
 	 * site 테이블을 url로 가져옴
@@ -173,6 +226,7 @@ class Model extends CI_Model {
 	 * @param	string		$url	site url
 	 */
 	public function read_site_url ($url) {
+		$language = $this->config->item('language');
 		$data = $site_member_grade_row = array();
 		$url = preg_replace('/(https?:\/\/)([0-9.]+)(\/?)/i','$2',$url);
 		
@@ -180,13 +234,12 @@ class Model extends CI_Model {
 		$this->db->select('*');
 		$this->db->from('site');
 		$this->db->like('url',$url,'both');
-		$this->db->limit(1);
-		$data = $this->db->get()->row_array();
+		$data = language_data($language,$this->db->get()->result_array());
 		
 		// get site admin member grade id
 		$this->db->select('*');
 		$this->db->from('site_member_grade');
-		$this->db->where('site_id',$data['id']);
+		$this->db->where('site_id',$data['site_id']);
 		$this->db->order_by('id','ASC');
 		$this->db->limit(1);
 		$site_member_grade_row = $this->db->get()->row_array();
@@ -194,11 +247,33 @@ class Model extends CI_Model {
 		$data['admin_grade_id'] = $site_member_grade_row['id'];
 		
 		// get favicon
-		$data['favicon'] = $this->file->read_model('site_favicon',$data['id']);
+		$data['favicon'] = $this->file->read_model('site_favicon',$data['site_id']);
 		
 		if (isset($data['favicon'][0])) {
 			$data['favicon'] = $data['favicon'][0];
 		}
+		
+		// get use language
+		$data['use_language'] = $this->read_site_language($data['site_id']);
+		
+		return $data;
+	}
+	
+	/**
+	 * read_site_id
+	 * 
+	 * ci_site
+	 * 
+	 * @param	numberic	$id		ci_site.id
+	 */
+	public function read_site_id ($id) {
+		$data = array();
+		
+		$this->db->select('*');
+		$this->db->from('site');
+		$this->db->where('id',$id);
+		$this->db->limit(1);
+		$data = $this->db->get()->row_array();
 		
 		return $data;
 	}
@@ -246,7 +321,7 @@ class Model extends CI_Model {
 		
 		// check ci_site.id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		$this->db->select('*');
@@ -266,6 +341,32 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * read_site_language
+	 * 
+	 * ci_site_language
+	 * 
+	 * @param	numberic	$site_id	ci_site.id
+	 */
+	public function read_site_language ($site_id = 0) {
+		$result = $languages = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->site['site_id'];
+		}
+		
+		$this->db->select('*');
+		$this->db->from('site_language');
+		$this->db->where('site_id',$site_id);
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $row) {
+			$languages[] = $row['language'];
+		}
+		
+		return $languages;
+	}
+	
+	/**
 	 * write_data
 	 * 
 	 * site 생성
@@ -273,53 +374,56 @@ class Model extends CI_Model {
 	 * @param	array	$data
 	 */
 	public function write_data ($data) {
-		$result = array();
+		$result = $site_member_grade_data = array();
 		$result['status'] = FALSE;
 		
-		if (isset($data['site_language']) === FALSE) {
-			$data['site_language'] = $this->config->item('language');
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
 		}
 		
-		if (isset($data['site_member_id']) === FALSE) {
+		if (!isset($data['member_id'])) {
 			if ($this->member->read_total() == 1) {
-				$data['site_member_id'] = 1;
+				$data['member_id'] = 1;
 			} else if (isset($this->member->data['id'])) {
-				$data['site_member_id'] = $this->member->data['id'];
+				$data['member_id'] = $this->member->data['id'];
 			} else {
 				$data['message'] = lang('member_login_required');
 				return $result;
 			}
 		}
 		
-		$site_data = $site_member_grade_data = array();
-		foreach ($data as $key => $value) {
-			if (strpos($key,'site_member_grade_') !== FALSE && strpos($key,'site_member_grade_') == 0) {
-				$site_member_grade_data[str_replace('site_member_grade_','',$key)] = $value;
-			} else if (strpos($key,'site_') !== FALSE && strpos($key,'site_') == 0) {
-				$site_data[str_replace('site_','',$key)] = $value;
-			}
+		if (!isset($data['default_language'])) {
+			$data['default_language'] = $data['language'];
 		}
 		
 		// insert ci_site
-		if ($this->db->insert('site',$site_data)) {
+		if ($this->db->insert('site',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('site_write_success');
 			$result['insert_id'] = $this->db->insert_id();
 			
-			// site member grade admin
-			$site_member_grade_data[0]['site_id'] = $result['insert_id'];
-			$site_member_grade_data[0]['name'] = lang('member_grade_admin');
-			$site_member_grade_data[0]['language'] = $this->config->item('language');
-			$site_member_grade_data[0]['default'] = 'f';
-			
-			// site member grade normal
-			$site_member_grade_data[1]['site_id'] = $result['insert_id'];
-			$site_member_grade_data[1]['name'] = lang('member_grade_normal');
-			$site_member_grade_data[1]['language'] = $this->config->item('language');
-			$site_member_grade_data[1]['default'] = 't';
-			
-			// insert ci_site_member_grade
-			$this->db->insert_batch('site_member_grade',$site_member_grade_data);
+			if (!isset($data['site_id'])) {
+				// site member grade admin
+				$site_member_grade_data[0]['site_id'] = $result['insert_id'];
+				$site_member_grade_data[0]['name'] = lang('member_grade_admin');
+				$site_member_grade_data[0]['language'] = $this->config->item('language');
+				$site_member_grade_data[0]['default'] = 'f';
+				
+				// site member grade normal
+				$site_member_grade_data[1]['site_id'] = $result['insert_id'];
+				$site_member_grade_data[1]['name'] = lang('member_grade_normal');
+				$site_member_grade_data[1]['language'] = $this->config->item('language');
+				$site_member_grade_data[1]['default'] = 't';
+				
+				// insert ci_site_member_grade
+				$this->db->insert_batch('site_member_grade',$site_member_grade_data);
+				
+				// update ci_site.site_id
+				$this->update_data(array('site_id'=>$result['insert_id']),$result['insert_id']);
+				
+				// update ci_site_language
+				$this->site_language(array($data['site_default_language']),$result['insert_id']);
+			}
 		} else {
 			$result['status'] = FALSE;
 			$result['message'] = $this->db->_error_message();
@@ -343,7 +447,7 @@ class Model extends CI_Model {
 		
 		// check ci_site.id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		foreach ($data as $key => $row) {
@@ -394,7 +498,7 @@ class Model extends CI_Model {
 		
 		// check ci_site.id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		foreach ($data as $key => $row) {
@@ -507,7 +611,7 @@ class Model extends CI_Model {
 		
 		// check site_id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		// delete DB
@@ -549,6 +653,11 @@ class Model extends CI_Model {
 						'constraint'=>11,
 						'unsigned'=>TRUE,
 						'auto_increment'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
 					),
 					'url'=>array(
 						'type'=>'VARCHAR',
@@ -594,6 +703,10 @@ class Model extends CI_Model {
 						'type'=>'VARCHAR',
 						'constraint'=>255,
 						'default'=>'ckeditor'
+					),
+					'default_language'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
 					)
 				);
 				$this->dbforge->add_field($fields);
@@ -641,6 +754,34 @@ class Model extends CI_Model {
 				$this->dbforge->add_field($fields);
 				$this->dbforge->add_key('id',TRUE);
 				$return = $this->dbforge->create_table('site_member_grade');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
+		// site_language table
+		if (!$this->db->table_exists('site_language')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'language'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('site_language');
 			} else if (!$return) {
 				$return = TRUE;
 			}
