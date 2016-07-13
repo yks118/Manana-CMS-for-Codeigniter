@@ -5,12 +5,12 @@ class Admin extends CI_Controller {
 	public function __construct () {
 		parent::__construct();
 		
-		if (isset($this->member->data['id']) === FALSE) {
+		if (!isset($this->member->data['id'])) {
 			// login 유저가 아니라면 로그인 화면으로..
 			set_cookie('noti',lang('member_login_required'),0);
 			set_cookie('noti_type','danger',0);
 			redirect('/member/login/');
-		} else if ($this->member->check_admin() === FALSE) {
+		} else if (!$this->member->check_admin()) {
 			// admin 권한이 없다면, 팅겨냄..
 			set_cookie('noti',lang('system_auth_danger'),0);
 			set_cookie('noti_type','danger',0);
@@ -60,6 +60,7 @@ class Admin extends CI_Controller {
 		
 		$data['data'] = $this->model->read_site_url(base_url('/'));
 		$data['editor_list'] = $this->editor->read_list();
+		$data['language_list'] = read_folder_list('./application/language/');
 		
 		$this->load->view('admin/site',$data);
 	}
@@ -71,16 +72,20 @@ class Admin extends CI_Controller {
 	 */
 	public function updateSiteForm () {
 		$id = 0;
-		$result = $data = array();
+		$result = $data = $languages = $site_data = array();
 		
 		$id = $this->input->post('site_id');
 		$data = delete_prefix($this->model->post_data('site_','site_id'),'site_');
+		$languages = delete_prefix($this->input->post('use_site_language'),'use_');
 		
-		$result = $this->model->update_data($data,$id);
+		$site_data = $this->model->read_site_id($id);
+		
+		$this->model->site_language($languages);
+		$result = (isset($site_data['id']) && ($site_data['language'] == $this->config->item('language')))?$this->model->update_data($data,$id):$this->model->write_data($data);
 		
 		if ($result['status']) {
 			// success
-			set_cookie('noti',$result['message'],0);
+			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
 			echo js('parent.document.location.href = "'.base_url('/admin/site/').'";');
 		} else {

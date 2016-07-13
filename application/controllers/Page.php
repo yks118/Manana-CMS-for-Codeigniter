@@ -4,6 +4,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Page extends CI_Controller {
 	public function __construct() {
 		parent::__construct();
+		
+		// load common page js
+		$this->model->js($this->model->path.'/views/admin/page/js/page.js');
 	}
 	
 	/**

@@ -7,7 +7,6 @@
   padding: 0px 15px;
   font-size: 20px;
   line-height: 50px;
-  overflow: hidden;
   z-index: 9;
 }
 #adminLayout #headerLayout button,
@@ -34,6 +33,9 @@
   font-size: 12px;
   line-height: 16px;
   border-radius: 3px;
+}
+#adminLayout #headerLayout ul li.dropdown ul.dropdown-menu a {
+  color: #000;
 }
 #adminLayout #lnbLayout {
   position: fixed;

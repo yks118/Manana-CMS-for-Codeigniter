@@ -231,10 +231,13 @@ class Model extends CI_Model {
 		$url = preg_replace('/(https?:\/\/)([0-9.]+)(\/?)/i','$2',$url);
 		
 		// get DB
-		$this->db->select('*');
-		$this->db->from('site');
-		$this->db->like('url',$url,'both');
-		$data = language_data($language,$this->db->get()->result_array());
+		$this->db->select(write_prefix_db($this->db->list_fields('site'),array('s','sj')));
+		$this->db->from('site s');
+		$this->db->join('site sj','s.site_id = sj.site_id AND sj.language = "'.$language.'"','LEFT');
+		$this->db->like('s.url',$url,'both');
+		$this->db->group_by('s.site_id');
+		$this->db->limit(1);
+		$data = read_prefix_db($this->db->get()->row_array(),'sj');
 		
 		// get site admin member grade id
 		$this->db->select('*');
@@ -418,6 +421,11 @@ class Model extends CI_Model {
 				// insert ci_site_member_grade
 				$this->db->insert_batch('site_member_grade',$site_member_grade_data);
 				
+				// update ci_site_member_grade
+				$this->db->set('site_member_grade_id','id');
+				$this->db->where('site_id',$result['insert_id']);
+				$this->db->update('site_member_grade');
+				
 				// update ci_site.site_id
 				$this->update_data(array('site_id'=>$result['insert_id']),$result['insert_id']);
 				
@@ -451,17 +459,15 @@ class Model extends CI_Model {
 		}
 		
 		foreach ($data as $key => $row) {
-			if (strpos($key,'model_auth_') !== FALSE && strpos($key,'model_auth_') == 0) {
-				foreach ($row as $value) {
-					$model_auth_data[] = array(
-						'site_id'=>$site_id,
-						'site_member_grade_id'=>$value,
-						'model'=>$model,
-						'model_id'=>$model_id,
-						'action'=>str_replace('model_auth_','',$key),
-						'status'=>'t'
-					);
-				}
+			foreach ($row as $value) {
+				$model_auth_data[] = array(
+					'site_id'=>$site_id,
+					'site_member_grade_id'=>$value,
+					'model'=>$model,
+					'model_id'=>$model_id,
+					'action'=>$key,
+					'status'=>'t'
+				);
 			}
 		}
 		

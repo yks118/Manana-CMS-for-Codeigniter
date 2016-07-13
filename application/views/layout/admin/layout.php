@@ -22,6 +22,16 @@ $this->model->js($path.'/js/admin.layout.js');
 					<span>1</span>
 				</a>
 			</li>
+			<li class="dropdown">
+				<a class="dropdown-toggle text-capitalize" data-toggle="dropdown" role="button" href="#"><?php echo language($this->config->item('language')); ?></a>
+				<ul class="dropdown-menu dropdown-menu-right">
+					<?php foreach ($this->model->site['use_language'] as $language) { ?>
+					<li>
+						<a class="text-capitalize" target="_self" href="javascript:clickLanguage('<?php echo $language; ?>');"><?php echo $language; ?></a>
+					</li>
+					<?php } ?>
+				</ul>
+			</li>
 		</ul>
 	</div>
 	<aside id="lnbLayout">

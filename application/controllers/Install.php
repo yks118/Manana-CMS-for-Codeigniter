@@ -76,7 +76,12 @@ class Install extends CI_Controller {
 			$this->model->install();
 		}
 		
-		$data = $this->model->post_data('site_','site_id');
+		if (!$this->db->table_exists('file')) {
+			// file DB install
+			$this->file->install();
+		}
+		
+		$data = delete_prefix($this->model->post_data('site_','site_id'),'site_');
 		$result = $this->model->write_data($data);
 		
 		if ($result['status']) {

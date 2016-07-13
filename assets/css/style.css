@@ -6,6 +6,7 @@ html body {
   /* Bootstrap Growl */
   /* file upload thumbnails */
   /* pagination */
+  /* search */
 }
 html body iframe#hIframe {
   display: none;
@@ -58,6 +59,9 @@ html body ul.files.thumbnails li .btn {
 html body ul.pagination {
   margin-top: 0px;
   margin-bottom: 10px;
+}
+html body .form-inline .input-group .form-control {
+  width: auto;
 }
 /* loop default */
 .mt0 {

@@ -4,6 +4,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Member extends CI_Controller {
 	public function __construct() {
 		parent::__construct();
+		
+		// load member language
+		$this->load->language('member');
+		
+		// load common member js
+		$this->model->js($this->model->path.'/views/admin/member/js/member.js');
 	}
 	
 	/**
@@ -43,10 +49,12 @@ class Member extends CI_Controller {
 	 * admin_index
 	 */
 	public function admin_index () {
+		$limit = 20;
 		$data = array();
 		
 		$data['total'] = $this->member->read_total();
 		$data['list'] = $this->member->read_list();
+		$data['pagination'] = $this->model->pagination($data['total'],$limit);
 		
 		$this->load->view('admin/member/list',$data);
 	}
@@ -71,7 +79,8 @@ class Member extends CI_Controller {
 	 */
 	public function admin_updateForm () {
 		$id = 0;
-		$result = $member_post_data = $member_data = $member_information_data = $grade_data = array();
+		$language = $this->config->item('language');
+		$result = $member_post_data = $member_data = $member_information_data = $grade_data = $data = array();
 		
 		$id = $this->input->post('member_id');
 		$member_post_data = $this->model->post_data('member_','member_id');
@@ -88,7 +97,9 @@ class Member extends CI_Controller {
 		$result = $this->member->update_grade($grade_data,$id);
 		
 		if ($result['status']) {
-			$result = $this->member->update_information($member_information_data,$id);
+			$data = $this->member->read_data('id',$id,$this->model->site['site_id'],$language);
+			
+			$result = ($data['language'] == $language)?$this->member->update_information($member_information_data,$id,$language):$this->member->write_information($member_information_data,$id,$this->model->site['site_id'],$language);
 			$result = $this->member->update_data($member_data,$id);
 		}
 		
@@ -140,16 +151,17 @@ class Member extends CI_Controller {
 	 */
 	public function admin_updateGradeForm () {
 		$id = 0;
-		$result = $data = array();
+		$result = $data = $site_member_grade_data = array();
 		
-		$id = $this->input->post('grade_id');
+		$id = $this->input->post('grade_site_member_grade_id');
 		$data = delete_prefix($this->model->post_data('grade_','grade_id'),'grade_');
 		
-		$result = $this->member->update_site_grade($data,$id);
+		$site_member_grade_data = $this->member->read_site_grade_id($id,$this->model->site['site_id'],$data['language']);
+		$result = ($site_member_grade_data['language'] == $data['language'])?$this->member->update_site_grade($data,$id):$this->member->write_site_grade($data);
 		
 		if ($result['status']) {
 			// success
-			set_cookie('noti',$result['message'],0);
+			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
 			echo js('parent.document.location.href = "'.base_url('/admin/member/grade/').'";');
 		} else {

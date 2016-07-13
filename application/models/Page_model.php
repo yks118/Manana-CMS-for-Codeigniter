@@ -127,17 +127,28 @@ class Page_model extends CI_Model {
 	 * 
 	 * ci_page의 데이터를 리턴
 	 * 
-	 * @param	numberic	$id		ci_page.id
+	 * @param	numberic	$id			ci_page.page_id
+	 * @param	numberic	$site_id	ci_site.site_id
+	 * @param	string		$language
 	 */
-	public function read_id ($id) {
-		$language = $this->config->item('language');
+	public function read_id ($id,$site_id = 0,$language = '') {
 		$data = array();
 		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
 		// ci_page
-		$this->db->select('*');
-		$this->db->from('page');
-		$this->db->where('page_id',$id);
-		$data = language_data($language,$this->db->get()->result_array());
+		$this->db->select(write_prefix_db($this->db->list_fields('page'),array('p','pj')));
+		$this->db->from('page p');
+		$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$language.'"','LEFT');
+		$this->db->where('p.page_id',$id);
+		$this->db->where('p.site_id',$site_id);
+		$data = read_prefix_db($this->db->get()->row_array(),'pj');
 		
 		// ci_file
 		$data['files'] = array();
@@ -229,7 +240,7 @@ class Page_model extends CI_Model {
 	 * @param	numberic	$id		ci_page.id
 	 */
 	public function delete ($id) {
-		$result = $ids = array();
+		$result = $ids = $data = array();
 		
 		if (is_array($id)) {
 			$ids = $id;
@@ -238,7 +249,10 @@ class Page_model extends CI_Model {
 		}
 		
 		foreach ($ids as $value) {
-			$this->db->where('id',$value);
+			$data = array();
+			$data = $this->read_id($value);
+			
+			$this->db->where('page_id',$data['page_id']);
 			if ($this->db->delete('page')) {
 				$result['status'] = TRUE;
 				$result['message'] = lang('system_delete_success');

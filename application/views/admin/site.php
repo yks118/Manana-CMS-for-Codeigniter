@@ -5,6 +5,7 @@
 	?>
 	
 	<input type="hidden" name="site_id" id="site_id" value="<?php echo $data['id']; ?>" />
+	<input type="hidden" name="site_site_id" id="site_site_id" value="<?php echo $data['site_id']; ?>" />
 	
 	<div class="form-group">
 		<label for="site_url">Site Url</label>
@@ -90,6 +91,30 @@
 			<button type="button" class="btn btn-danger" onclick="clickFileDelete(this.form,<?php echo $data['favicon']['id']; ?>,'refresh')"><?php echo lang('text_delete'); ?></button>
 			<?php } else { ?>
 			<button type="button" class="btn btn-default" onclick="clickFileUpload(this.form,'site_favicon',<?php echo $data['id']; ?>,'refresh')"><?php echo lang('text_file_upload'); ?></button>
+			<?php } ?>
+		</div>
+	</div>
+	
+	<div class="form-group">
+		<label for="site_default_language"><?php echo lang('site_default_language'); ?></label>
+		<select class="form-control" name="site_default_language" id="site_default_language">
+			<?php foreach ($language_list as $language) { ?>
+			<option value="<?php echo $language; ?>" <?php echo ($language == $data['default_language'])?'selected="selected"':''; ?>><?php echo ucfirst($language); ?></option>
+			<?php } ?>
+		</select>
+	</div>
+	
+	<div class="form-group">
+		<label for="use_site_language"><?php echo lang('site_language'); ?></label>
+		<div>
+			<?php foreach ($language_list as $language) { ?>
+			<label class="checkbox-inline">
+				<input type="checkbox" id="use_site_language_<?php echo $language; ?>" name="use_site_language[]" value="<?php echo $language; ?>"
+					<?php echo (in_array($language,$data['use_language']))?'checked="checked"':''; ?>
+					<?php echo ($language == $data['default_language'])?'disabled="disabled"':''; ?>
+				/>
+				<?php echo ucwords($language); ?>
+			</label>
 			<?php } ?>
 		</div>
 	</div>

@@ -1,10 +1,11 @@
-<section id="writeBoardAdmin" class="admin">
+<section id="writeConfigBoardAdmin" class="admin">
 	<?php
 	$attributes = array('name'=>'fwrite','id'=>'fwrite','target'=>'hIframe');
-	echo form_open_multipart(base_url('/admin/board/'.$action.'Form/'),$attributes);
+	echo form_open_multipart(base_url('/admin/board/'.$action.'ConfigForm/'),$attributes);
 	?>
 	
-	<input type="hidden" name="config_id" id="config_id" value="<?php echo (isset($data['id']))?$data['id']:''; ?>" />
+	<input type="hidden" name="config_board_config_id" id="config_board_config_id" value="<?php echo (isset($data['board_config_id']))?$data['board_config_id']:0; ?>" />
+	<input type="hidden" name="config_language" id="config_language" value="<?php echo $this->config->item('language'); ?>" />
 	
 	<div class="form-group">
 		<label for="config_name"><?php echo lang('text_name'); ?></label>
@@ -190,6 +191,7 @@
 	</div>
 	
 	<div class="text-right">
+		<a class="btn btn-default" target="_self" href="<?php echo base_url('/admin/board/'); ?>"><?php echo lang('text_list'); ?></a>
 		<button class="btn btn-primary" type="submit"><?php echo lang('text_submit'); ?></button>
 	</div>
 	

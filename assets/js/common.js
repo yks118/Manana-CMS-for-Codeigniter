@@ -205,6 +205,16 @@ function read_language (text,file,language) {
 	return lang;
 }
 
+/**
+ * clickLanguage
+ * 
+ * @param	{string}	language
+ */
+function clickLanguage (language) {
+	jQuery.cookie(prefix+'language',language);
+	document.location.href = document.location.href;
+}
+
 jQuery(function(){
 	// input setting
 	jQuery('input[type!="hidden"]').each(function(){

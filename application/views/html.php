@@ -16,13 +16,13 @@
 		<link rel="icon" type="<?php echo $this->model->site['favicon']['type']; ?>" href="<?php echo html_path($this->model->site['favicon']['path']); ?>" />
 		<?php } ?>
 		
-		<?php if ($this->model->site['robots'] == 't') { ?>
+		<?php if (isset($this->model->site['robots']) && $this->model->site['robots'] == 't') { ?>
 		<meta name="robots" content="all" />
 		<?php } else { ?>
 		<meta name="robots" content="noindex,nofollow" />
 		<?php } ?>
 		
-		<?php if ($this->model->site['mobile_view'] == 't') { ?>
+		<?php if (isset($this->model->site['mobile_view']) && $this->model->site['mobile_view'] == 't') { ?>
 		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no" />
 		<?php } ?>
 		

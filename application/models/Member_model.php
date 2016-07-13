@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Member_model extends CI_Model {
-	private $select_field = 'm.*, m.description AS memo, mi.description';
+	private $select_field = 'm.*, m.description AS memo, mi.description AS mi_description, mij.description AS mij_description, mi.language AS mi_language, mij.language AS mij_language';
 	
 	public $data = array();
 	public $skin = 'basic';
@@ -64,7 +64,7 @@ class Member_model extends CI_Model {
 		$data = $result = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		$this->db->select('smg.id, smg.name');
@@ -168,22 +168,37 @@ class Member_model extends CI_Model {
 	 * @param	string		$field
 	 * @param	string		$value
 	 * @param	numberic	$site_id		ci_site.id
+	 * @param	string		$language
 	 */
-	public function read_data ($field,$value,$site_id = 0) {
+	public function read_data ($field,$value,$site_id = 0,$language = '') {
 		$data = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
 		}
 		
 		// get member info
 		$this->db->select($this->select_field);
 		$this->db->from('member m');
 		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
+		$this->db->join('member_information mij','m.id = mij.member_id AND mij.language = "'.$language.'"','LEFT');
 		$this->db->where('mi.site_id',$site_id);
 		$this->db->where('m.'.$field,$value);
 		$this->db->limit(1);
 		$data = $this->db->get()->row_array();
+		
+		if (isset($data['mij_description'])) {
+			$data['language'] = $data['mij_language'];
+			$data['description'] = $data['mij_description'];
+		} else {
+			$data['language'] = $data['mi_language'];
+			$data['description'] = $data['mi_description'];
+		}
+		unset($data['mi_language'],$data['mij_language'],$data['mi_description'],$data['mij_description']);
 		
 		// get member grade
 		$data['grade'] = $this->_read_grade($data['id'],$site_id);
@@ -211,7 +226,7 @@ class Member_model extends CI_Model {
 		$list = $result = array();
 		
 		if (!isset($data['site_id'])) {
-			$data['site_id'] = $this->model->site['id'];
+			$data['site_id'] = $this->model->site['site_id'];
 		}
 		
 		if (!isset($data['limit'])) {
@@ -230,12 +245,14 @@ class Member_model extends CI_Model {
 		$this->db->select($this->select_field);
 		$this->db->from('member m');
 		$this->db->join('member_information mi','m.id = mi.member_id','LEFT');
+		$this->db->join('member_information mij','m.id = mij.member_id','LEFT');
 		$this->db->where('mi.site_id',$data['site_id']);
+		$this->db->group_by('m.id');
 		
 		if (isset($data['order_by']) && isset($data['order_by_sort'])) {
-			$this->db->order_by($data['order_by'],$data['order_by_sort']);
+			$this->db->order_by('mi.'.$data['order_by'],$data['order_by_sort']);
 		} else {
-			$this->db->order_by('member_id','DESC');
+			$this->db->order_by('mi.member_id','DESC');
 		}
 		
 		if (isset($data['limit'])) {
@@ -249,6 +266,15 @@ class Member_model extends CI_Model {
 		$result = $this->db->get()->result_array();
 		
 		foreach ($result as $key => $row) {
+			if (isset($row['mij_description'])) {
+				$data['language'] = $row['mij_language'];
+				$data['description'] = $row['mij_description'];
+			} else {
+				$data['language'] = $row['mi_language'];
+				$data['description'] = $row['mi_description'];
+			}
+			unset($row['mi_language'],$row['mij_language'],$row['mi_description'],$row['mij_description']);
+			
 			$row['number'] = $data['total'] - $key;
 			
 			$list[] = $row;
@@ -258,36 +284,36 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
-	 * read_grade_list
+	 * read_site_grade_list
 	 * 
 	 * 사이트의 회원등급 리스트를 리턴
 	 * 
 	 * @param	numberic	$site_id		ci_site.id
+	 * @param	string		$language
 	 */
-	public function read_site_grade_list ($site_id = 0) {
+	public function read_site_grade_list ($site_id = 0,$language = '') {
 		$list = array();
-		$language = $this->config->item('language');
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		// get DB
-		$this->db->select();
-		$this->db->from('site_member_grade');
-		$this->db->where('site_id',$site_id);
-		$this->db->order_by('site_member_grade_id','ASC');
-		$this->db->order_by('id','ASC');
+		$this->db->select(write_prefix_db($this->db->list_fields('site_member_grade'),array('s','sj')));
+		$this->db->from('site_member_grade s');
+		$this->db->join('site_member_grade sj','s.site_member_grade_id = sj.site_member_grade_id AND sj.language = "'.$language.'"','LEFT');
+		$this->db->where('s.site_id',$site_id);
+		$this->db->group_by('s.site_member_grade_id');
+		$this->db->order_by('s.site_member_grade_id','ASC');
+		$this->db->order_by('s.id','ASC');
 		$query = $this->db->get();
 		
 		foreach ($query->result_array() as $row) {
-			$list[$row['language']][] = $row;
-		}
-		
-		if (isset($list[$language])) {
-			$list = $list[$language];
-		} else {
-			$list = $list[key($list)];
+			$list[] = read_prefix_db($row,'sj');
 		}
 		
 		return $list;
@@ -298,16 +324,28 @@ class Member_model extends CI_Model {
 	 * 
 	 * 사이트의 회원등급 정보를 리턴
 	 * 
-	 * @param	numberic	$site_grade_id		ci_site_member_grade.id
+	 * @param	numberic	$site_grade_id		ci_site_member_grade.site_member_grade_id
+	 * @param	numberic	$site_id			ci_site.id
+	 * @param	string		$language
 	 */
-	public function read_site_grade_id ($site_grade_id) {
+	public function read_site_grade_id ($site_grade_id,$site_id = 0,$language = '') {
 		$data = array();
 		
-		$this->db->select('*');
-		$this->db->from('site_member_grade');
-		$this->db->where('id',$site_grade_id);
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		$this->db->select(write_prefix_db($this->db->list_fields('site_member_grade'),array('s','sj')));
+		$this->db->from('site_member_grade s');
+		$this->db->join('site_member_grade sj','s.site_member_grade_id = sj.site_member_grade_id AND sj.language = "'.$language.'"','LEFT');
+		$this->db->where('s.site_member_grade_id',$site_grade_id);
+		$this->db->where('s.site_id',$site_id);
 		$this->db->limit(1);
-		$data = $this->db->get()->row_array();
+		$data = read_prefix_db($this->db->get()->row_array(),'sj');
 		
 		return $data;
 	}
@@ -317,7 +355,7 @@ class Member_model extends CI_Model {
 	 * 
 	 * 사이트에 해당 등급의 멤버 숫자를 리턴
 	 * 
-	 * @param	numberic	$site_grade_id		ci_site_member_grade.id
+	 * @param	numberic	$site_grade_id		ci_site_member_grade.site_member_grade_id
 	 */
 	public function read_grade_total ($site_grade_id) {
 		$total = 0;
@@ -346,7 +384,7 @@ class Member_model extends CI_Model {
 		
 		// check site id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		if ($id) {
@@ -436,6 +474,44 @@ class Member_model extends CI_Model {
 	}
 	
 	/**
+	 * write_information
+	 * 
+	 * 회원정보 추가
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_member.id
+	 * @param	numberic	$site_id	ci_site.id
+	 * @param	string		$language
+	 */
+	function write_information ($data,$id,$site_id = 0,$language = '') {
+		$result = array();
+		
+		if (!isset($data['member_id'])) {
+			$data['member_id'] = $id;
+		}
+		
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = (empty($site_id))?$this->model->site['site_id']:$site_id;
+		}
+		
+		if (!isset($data['language'])) {
+			$data['language'] = (empty($language))?$this->model->site['site_id']:$language;
+		}
+		
+		if ($this->db->insert('member_information',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+			$result['insert_id'] = $this->db->insert_id();
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * write_site_grade
 	 * 
 	 * 사이트 등급 추가
@@ -446,7 +522,7 @@ class Member_model extends CI_Model {
 		$result = array();
 		
 		if (!isset($data['site_id'])) {
-			$data['site_id'] = $this->model->site['id'];
+			$data['site_id'] = $this->model->site['site_id'];
 		}
 		
 		if (!isset($data['site_member_grade_id'])) {
@@ -464,6 +540,11 @@ class Member_model extends CI_Model {
 		if ($this->db->insert('site_member_grade',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('system_write_success');
+			$result['insert_id'] = $this->db->insert_id();
+			
+			if (empty($data['site_member_grade_id'])) {
+				$this->update_site_grade(array('site_member_grade_id'=>$result['insert_id'],'language'=>$data['language']),$result['insert_id']);
+			}
 		} else {
 			$result['status'] = FALSE;
 			$result['message'] = $this->db->_error_message();
@@ -486,7 +567,7 @@ class Member_model extends CI_Model {
 		$result = $grade_data = $insert_data = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		// get grade DB
@@ -541,7 +622,7 @@ class Member_model extends CI_Model {
 		$result = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['id'];
+			$site_id = $this->model->site['site_id'];
 		}
 		
 		if (empty($language)) {
@@ -598,13 +679,13 @@ class Member_model extends CI_Model {
 	 * ci_site_member_grade 업데이트
 	 * 
 	 * @param	array		$data
-	 * @param	numberic	$grade_id		ci_grade.id
+	 * @param	numberic	$site_member_grade_id		ci_site_member_grade.site_member_grade_id
 	 */
 	public function update_site_grade ($data,$site_member_grade_id) {
 		$result = array();
 		
 		if (!isset($data['site_id'])) {
-			$data['site_id'] = $this->model->site['id'];
+			$data['site_id'] = $this->model->site['site_id'];
 		}
 		
 		if (!isset($data['language'])) {
@@ -621,7 +702,8 @@ class Member_model extends CI_Model {
 			$this->db->update('site_member_grade');
 		}
 		
-		$this->db->where('id',$site_member_grade_id);
+		$this->db->where('site_member_grade_id',$site_member_grade_id);
+		$this->db->where('language',$data['language']);
 		if ($this->db->update('site_member_grade',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('system_update_success');
@@ -639,14 +721,14 @@ class Member_model extends CI_Model {
 	 * 
 	 * ci_site_member_grade 삭제
 	 * 
-	 * @param	numberic	$id		ci_site_member_grade.id
+	 * @param	numberic	$id		ci_site_member_grade.site_member_grade_id
 	 */
 	public function delete_site_grade ($site_grade_id) {
 		$total = 0;
 		$result = $data = array();
 		
-		$total = $this->member->read_grade_total($id);
-		$data = $this->member->read_site_grade_id($id);
+		$total = $this->member->read_grade_total($site_grade_id);
+		$data = $this->member->read_site_grade_id($site_grade_id);
 		
 		if ($data['default'] == 't') {
 			$result['status'] = FALSE;
@@ -655,7 +737,7 @@ class Member_model extends CI_Model {
 			$result['status'] = FALSE;
 			$result['message'] = lang('member_grade_delete_danger_empty');
 		} else {
-			$this->db->where('id',$site_grade_id);
+			$this->db->where('site_member_grade_id',$data['site_member_grade_id']);
 			if ($this->db->delete('site_member_grade')) {
 				$result['status'] = TRUE;
 				$result['message'] = lang('member_grade_delete_success');

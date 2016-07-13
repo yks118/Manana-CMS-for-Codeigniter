@@ -36,12 +36,14 @@ $lang['text_default_secret'] = '비밀글 강제 여부';
 $lang['text_comment_use_secret'] = '코멘트 비밀글 사용 여부';
 $lang['text_comment_default_secret'] = '코멘트 비밀글 강제 여부';
 $lang['text_title'] = '제목';
+$lang['text_document'] = '내용';
 $lang['text_favicon'] = '파비콘';
 $lang['text_file_upload'] = '파일 업로드';
 $lang['text_file_download'] = '파일 다운로드';
 $lang['text_delete'] = '삭제';
 $lang['text_number'] = '번호';
 $lang['text_update'] = '수정';
+$lang['text_list'] = '목록';
 
 // site
 $lang['site_name'] = '사이트 이름';
@@ -56,6 +58,8 @@ $lang['site_login_username'] = 'ID 로그인';
 $lang['site_login_email'] = 'E-Mail 로그인';
 $lang['site_write_success'] = '사이트가 생성되었습니다.';
 $lang['site_default_editor'] = '기본 에디터';
+$lang['site_default_language'] = '기본 언어';
+$lang['site_language'] = '사이트 언어';
 
 // member
 $lang['member_username'] = '아이디';
@@ -70,6 +74,11 @@ $lang['member_login_required'] = '로그인이 필요합니다.';
 $lang['member_login_success'] = '로그인에 성공하였습니다.';
 $lang['member_login_danger'] = '로그인에 실패하였습니다.';
 $lang['member_join'] = '회원가입';
+$lang['member_join_date'] = '가입일';
+$lang['member_memo'] = '메모';
+$lang['member_description'] = '자기소개';
+$lang['member_grade'] = '회원등급';
+$lang['member_last_login'] = '최근 로그인 일시';
 
 // admin
 $lang['admin_menu_dashboard'] = '대시보드';

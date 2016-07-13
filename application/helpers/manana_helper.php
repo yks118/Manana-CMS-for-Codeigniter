@@ -114,8 +114,8 @@ function write_prefix ($data,$prefix) {
  * 
  * array로 된 배열을 필요한것만 가공해서 리턴 (DB에서 사용)
  * 
- * @param	array	$data
- * @param	array	$prefix
+ * @param	array		$data
+ * @param	string		$prefix
  */
 function read_prefix_db ($data,$prefix) {
 	$row = array();
@@ -215,31 +215,6 @@ function language ($language,$length = 2) {
 	}
 	
 	return $lang;
-}
-
-/**
- * language_data
- * 
- * data의 배열에서 language의 row를 리턴
- * 
- * @param	string		$language
- * @param	array		$data
- */
-function language_data ($language,$result) {
-	$data = array();
-	
-	foreach ($result as $key => $row) {
-		if (empty($key)) {
-			$data = $row;
-		}
-		
-		if ($language == $row['language']) {
-			$data = $row;
-			break;
-		}
-	}
-	
-	return $data;
 }
 
 /**
