@@ -95,6 +95,167 @@ class Admin extends CI_Controller {
 	}
 	
 	/**
+	 * menu
+	 * 
+	 * 메뉴 관리
+	 */
+	public function menu () {
+		$data = array();
+		
+		// set nestable plugin
+		$this->model->css($this->model->path.'/plugin/nestable/nestable.less');
+		$this->model->js($this->model->path.'/plugin/nestable/jquery.nestable.js','footer');
+		$this->model->js($this->model->path.'/js/menu.admin.js','footer');
+		
+		$data['list'] = $this->model->read_menu_list();
+		$data['model_list'] = array('board','page','outpage');
+		$data['site_member_grade_list'] = $this->member->read_site_grade_list();
+		$data['site_member_grade_list'][] = array(
+			'id'=>0,
+			'site_id'=>0,
+			'site_member_grade_id'=>0,
+			'name'=>lang('text_guest')
+		);
+		
+		$this->load->view('admin/menu',$data);
+	}
+	
+	/**
+	 * updateMenuForm
+	 * 
+	 * 메뉴 업데이트
+	 */
+	public function updateMenuForm () {
+		$result = $data = $menu_data = $grade_data = array();
+		
+		$data = delete_prefix($this->model->post_data('menu_','menu_id'),'menu_');
+		$grade_data = $this->input->post('grade');
+		$menu_data = $this->model->read_menu_id($data['site_menu_id']);
+		
+		$result = (isset($menu_data['language']) && $menu_data['language'] == $data['language'])?$this->model->update_menu($data,$data['site_menu_id']):$this->model->write_menu($data);
+		
+		if ($result['status']) {
+			$this->model->menu_auth($grade_data,$result['insert_id']);
+			
+			// success
+			set_cookie('noti',lang('system_update_success'),0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/admin/menu/').'";');
+		} else {
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
+	
+	/**
+	 * readMenuModelIdAjax
+	 * 
+	 * 메뉴 모델 리스트 리턴
+	 */
+	public function readMenuModelIdAjax () {
+		$limit = 999;
+		$model = '';
+		$response = array();
+		
+		$model = $this->input->post('model');
+		
+		switch ($model) {
+			case 'board' :
+					$response['data'] = $this->board->read_list_config(0,$limit);
+				break;
+			case 'page' :
+					$response['data'] = $this->page->read_list (0,$limit);
+				break;
+		}
+		
+		if (isset($response['data'])) {
+			$response['status'] = TRUE;
+			
+			if (!count($response['data'])) {
+				$response['data'][] = lang('system_not_data');
+			}
+		} else {
+			$response['status'] = FALSE;
+			$response['message'] = lang('system_not_data');
+		}
+		
+		echo json_encode($response);
+	}
+	
+	/**
+	 * updateMenuIndexAjax
+	 * 
+	 * 메뉴 순서 변경
+	 */
+	public function updateMenuIndexAjax () {
+		$language = '';
+		$response = $node = array();
+		
+		$language = $this->input->post('language');
+		$node = $this->input->post('node');
+		
+		foreach ($node[0]['children'] as $lnb_key => $lnb) {
+			$response = $this->model->update_menu(array('parent_id'=>0,'index'=>$lnb_key+1),$lnb['id'],$this->model->site['site_id'],$language);
+			
+			if (isset($lnb['children'])) {
+				foreach ($lnb['children'] as $snb_key => $snb) {
+					$response = $this->model->update_menu(array('parent_id'=>$lnb['id'],'index'=>$snb_key+1),$snb['id'],$this->model->site['site_id'],$language);
+				}
+			}
+		}
+		
+		echo json_encode($response);
+	}
+	
+	/**
+	 * readMenuId
+	 * 
+	 * return ci_site_menu row
+	 */
+	public function readMenuId () {
+		$id = 0;
+		$response = array();
+		
+		$id = $this->input->post('id');
+		
+		if (empty($id)) {
+			$response['status'] = FALSE;
+			$response['message'] = lang('system_connect_danger');
+		} else {
+			$response['data'] = $this->model->read_menu_id($id);
+			
+			if (isset($response['data']['id'])) {
+				$response['status'] = TRUE;
+			} else {
+				$response['status'] = FALSE;
+				$response['message'] = lang('system_not_data');
+			}
+		}
+		
+		echo json_encode($response);
+	}
+	
+	/**
+	 * updateMenuHomeAjax
+	 * 
+	 * set menu main
+	 */
+	public function updateMenuHomeAjax () {
+		$id = 0;
+		$response = array();
+		
+		$id = $this->input->post('id');
+		
+		$this->db->set('is_main','f');
+		$this->db->where('site_id',$this->model->site['site_id']);
+		$this->db->update('site_menu');
+		
+		// update
+		$response = $this->model->update_menu(array('is_main'=>'t'),$id);
+		
+		echo json_encode($response);
+	}
+	
+	/**
 	 * install
 	 * 
 	 * 모듈 갱신
