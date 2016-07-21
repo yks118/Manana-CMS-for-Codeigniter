@@ -1,0 +1,49 @@
+.dd {
+  position: relative;
+}
+.dd .dd-list {
+  position: relative;
+  list-style: none;
+  padding-left: 0px;
+}
+.dd .dd-list .dd-item.dd-collapsed .dd-list {
+  display: none;
+}
+.dd .dd-list .dd-placeholder {
+  position: relative;
+  background: #f2fbff;
+  border: 1px dashed #b6bcbf;
+  margin-bottom: 10px;
+}
+.dd-item {
+  padding-bottom: 10px;
+}
+.dd-item button[data-action] {
+  position: absolute;
+  z-index: 9;
+  left: 43px;
+  border-radius: 0px;
+}
+.dd-item button[data-action] ~ .input-group {
+  padding-bottom: 10px;
+}
+.dd-item button[data-action] ~ .input-group .dd-content {
+  padding-left: 55px;
+}
+.dd-item .input-group .dd-content {
+  background-color: #fff;
+}
+.dd-item .dd-list {
+  padding-left: 20px;
+  list-style: none;
+}
+.dd-item .dd-list .dd-item button[data-action] {
+  left: 63px;
+}
+.dd-dragel {
+  position: absolute;
+  z-index: 9;
+  list-style: none;
+  padding-left: 0px;
+  pointer-events: none;
+}

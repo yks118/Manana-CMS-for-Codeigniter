@@ -65,13 +65,18 @@ class Page_model extends CI_Model {
 	 * @param	numberic	$limit
 	 * @param	numberic	$page
 	 * @param	numberic	$site_id		ci_site.id
+	 * @param	string		$language
 	 * @param	array		$field
 	 * @param	array		$keyword
 	 */
-	public function read_list ($total,$limit = 20,$page = 1,$site_id = 0,$field = array(),$keyword = array()) {
+	public function read_list ($total = 0,$limit = 20,$page = 1,$site_id = 0,$language = '',$field = array(),$keyword = array()) {
 		$offset = 0;
 		$query = '';
 		$list = $result = $fields = $keywords = array();
+		
+		if (empty($total)) {
+			$total = $this->read_total($site_id,$field,$keyword);
+		}
 		
 		if (empty($page)) {
 			$page = 1;
@@ -79,6 +84,10 @@ class Page_model extends CI_Model {
 		
 		if (empty($site_id)) {
 			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
 		}
 		
 		if (is_array($field)) {
@@ -97,7 +106,7 @@ class Page_model extends CI_Model {
 		
 		$this->db->select(write_prefix_db($this->db->list_fields('page'),array('p','pj')));
 		$this->db->from('page p');
-		$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$this->config->item('language').'"','LEFT');
+		$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$language.'"','LEFT');
 		
 		foreach ($fields as $key => $value) {
 			if (isset($fields[$key])) {
@@ -193,7 +202,9 @@ class Page_model extends CI_Model {
 			$result['insert_id'] = $this->db->insert_id();
 			
 			if (!isset($data['page_id'])) {
-				$this->update_data(array('page_id'=>$result['insert_id'],'update_datetime'=>$data['update_datetime']),$result['insert_id']);
+				$this->db->set('page_id',$result['insert_id']);
+				$this->db->where('id',$result['insert_id']);
+				$this->db->update('page');
 			}
 		} else {
 			$result['status'] = FALSE;
@@ -210,16 +221,28 @@ class Page_model extends CI_Model {
 	 * page update
 	 * 
 	 * @param	array		$data
-	 * @param	numberic	$id			ci_page.id
+	 * @param	numberic	$id			ci_page.page_id
+	 * @param	numberic	$site_id	ci_site.site_id
+	 * @param	string		$language
 	 */
-	public function update_data ($data,$id) {
+	public function update_data ($data,$id,$site_id = 0,$language = '') {
 		$result = array();
 		
 		if (!isset($data['update_datetime'])) {
 			$data['update_datetime'] = date('Y-m-d H:i:s');
 		}
 		
-		$this->db->where('id',$id);
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		$this->db->where('page_id',$id);
+		$this->db->where('site_id',$site_id);
+		$this->db->where('language',$language);
 		if ($this->db->update('page',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('system_update_success');

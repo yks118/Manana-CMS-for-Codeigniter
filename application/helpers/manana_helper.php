@@ -127,9 +127,11 @@ function read_prefix_db ($data,$prefix) {
 			}
 		}
 	} else {
-		foreach ($data as $key => $value) {
-			if ($key && !(strpos($key,$prefix) !== FALSE && strpos($key,$prefix) == 0)) {
-				$row[preg_replace('/^[^_]+_(.+)/i','$1',$key)] = $value;
+		if (!empty($data)) {
+			foreach ($data as $key => $value) {
+				if ($key && !(strpos($key,$prefix) !== FALSE && strpos($key,$prefix) == 0)) {
+					$row[preg_replace('/^[^_]+_(.+)/i','$1',$key)] = $value;
+				}
 			}
 		}
 	}

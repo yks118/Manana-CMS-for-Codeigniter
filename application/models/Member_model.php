@@ -543,7 +543,9 @@ class Member_model extends CI_Model {
 			$result['insert_id'] = $this->db->insert_id();
 			
 			if (empty($data['site_member_grade_id'])) {
-				$this->update_site_grade(array('site_member_grade_id'=>$result['insert_id'],'language'=>$data['language']),$result['insert_id']);
+				$this->db->set('site_member_grade_id',$result['insert_id']);
+				$this->db->where('id',$result['insert_id']);
+				$this->db->update('site_member_grade');
 			}
 		} else {
 			$result['status'] = FALSE;

@@ -30,7 +30,7 @@ class Board_model extends CI_Model {
 			$this->db->where('board_config_id',$config_id);
 		}
 		
-		$total = $this->db->count_all_results('board');
+		$total = $this->db->get('board')->num_rows();
 		return $total;
 	}
 	
@@ -65,7 +65,7 @@ class Board_model extends CI_Model {
 		
 		$this->db->where('site_id',$site_id);
 		$this->db->group_by('board_config_id');
-		$total = $this->db->count_all_results('board_config');
+		$total = $this->db->get('board_config')->num_rows();
 		
 		return $total;
 	}
@@ -200,7 +200,9 @@ class Board_model extends CI_Model {
 			$result['insert_id'] = $this->db->insert_id();
 			
 			if (!isset($data['board_config_id']) || empty($data['board_config_id'])) {
-				$this->update_config(array('board_config_id'=>$result['insert_id']),$result['insert_id']);
+				$this->db->set('board_config_id',$result['insert_id']);
+				$this->db->where('id',$result['insert_id']);
+				$this->db->update('board_config');
 			}
 		} else {
 			$result['status'] = FALSE;
@@ -216,17 +218,25 @@ class Board_model extends CI_Model {
 	 * 
 	 * 게시판 설정 업데이트
 	 * 
-	 * @param	array		$data	ci_board_config row
-	 * @param	numberic	$id		ci_board_config.board_config_id
+	 * @param	array		$data		ci_board_config row
+	 * @param	numberic	$id			ci_board_config.board_config_id
+	 * @param	numberic	$site_id	ci_site.site_id
+	 * @param	string		$language
 	 */
-	public function update_config ($data,$id) {
+	public function update_config ($data,$id,$site_id = 0,$language = '') {
 		$site_id = 0;
 		$language = '';
 		$result = array();
 		
 		$result['status'] = FALSE;
-		$site_id = $this->model->site['site_id'];
-		$language = $this->config->item('language');
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
 		
 		// update ci_board_config
 		$this->db->where('language',$language);

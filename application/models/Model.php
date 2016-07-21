@@ -70,6 +70,10 @@ class Model extends CI_Model {
 			$menu_data['site']['name'] = lang('admin_menu_site');
 			$menu_data['site']['href'] = base_url('/admin/site/');
 			$menu_data['site']['target'] = '_self';
+			
+			$menu_data['menu']['name'] = lang('admin_menu_menu');
+			$menu_data['menu']['href'] = base_url('/admin/menu/');
+			$menu_data['menu']['target'] = '_self';
 		} else {
 			
 			if ($segment && isset($menu_data[$segment]['name'])) {
@@ -78,6 +82,30 @@ class Model extends CI_Model {
 		}
 		
 		return $menu_data;
+	}
+	
+	/**
+	 * _read_menu_auth
+	 * 
+	 * ci_site_menu_auth에 명시된 권한들 리턴
+	 * 
+	 * @param	numberic	$menu_id	ci_site_menu_auth.site_menu_id
+	 */
+	private function _read_menu_auth ($menu_id) {
+		$list = $result = array();
+		
+		$this->db->select('*');
+		$this->db->from('site_menu_auth');
+		$this->db->where('site_menu_id',$menu_id);
+		$this->db->where('status','t');
+		$this->db->order_by('id','ASC');
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $row) {
+			$list[] = $row['site_member_grade_id'];
+		}
+		
+		return $list;
 	}
 	
 	/**
@@ -216,6 +244,55 @@ class Model extends CI_Model {
 		}
 		
 		return $result;
+	}
+	
+	/**
+	 * menu_auth
+	 * 
+	 * ci_site_menu_auth update
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$menu_id
+	 */
+	public function menu_auth ($data,$menu_id) {
+		$result = $auth_data = $insert_data = array();
+		
+		// update
+		$this->db->set('status','f');
+		$this->db->where('site_menu_id',$menu_id);
+		$this->db->update('site_menu_auth');
+		
+		$this->db->select('*');
+		$this->db->from('site_menu_auth');
+		$this->db->where('site_menu_id',$menu_id);
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $row) {
+			$auth_data[] = $row['site_member_grade_id'];
+			
+			if (in_array($row['site_member_grade_id'],$data)) {
+				// update
+				$this->db->set('status','t');
+				$this->db->where('id',$row['id']);
+				$this->db->update('site_menu_auth');
+			}
+		}
+		
+		foreach ($data as $value) {
+			if (!in_array($value,$auth_data)) {
+				// insert
+				$insert_data[] = array(
+					'site_menu_id'=>$menu_id,
+					'site_member_grade_id'=>$value,
+					'status'=>'t'
+				);
+			}
+		}
+		
+		if (count($insert_data)) {
+			// insert_batch
+			$this->db->insert_batch('site_menu_auth',$insert_data);
+		}
 	}
 	
 	/**
@@ -370,6 +447,78 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * read_menu_id
+	 * 
+	 * ci_site_menu의 row를 리턴
+	 * 
+	 * @param	numberic	$menu_id	ci_site_menu.site_menu_id
+	 */
+	public function read_menu_id ($id,$site_id = 0,$language = '') {
+		$data = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		$this->db->select(write_prefix_db($this->db->list_fields('site_menu'),array('m','mj')));
+		$this->db->from('site_menu m');
+		$this->db->join('site_menu mj','m.site_menu_id = mj.site_menu_id AND mj.language = "'.$language.'"','LEFT');
+		$this->db->where('m.site_id',$site_id);
+		$this->db->where('m.site_menu_id',$id);
+		$this->db->group_by('m.site_menu_id');
+		$this->db->limit(1);
+		$data = read_prefix_db($this->db->get()->row_array(),'mj');
+		
+		$data['grade'] = $this->_read_menu_auth($id);
+		
+		return $data;
+	}
+	
+	/**
+	 * read_menu_list
+	 * 
+	 * 사이트 메뉴 리스트 리턴
+	 * 
+	 * @param	numberic	$parent_id		ci_site_menu.parent_id
+	 * @param	numberic	$site_id		ci_site.site_id
+	 * @param	string		$language
+	 */
+	public function read_menu_list ($parent_id = 0,$site_id = 0,$language = '') {
+		$list = $result = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		$this->db->select(write_prefix_db($this->db->list_fields('site_menu'),array('m','mj')));
+		$this->db->from('site_menu m');
+		$this->db->join('site_menu mj','m.site_menu_id = mj.site_menu_id AND mj.language = "'.$language.'"','LEFT');
+		$this->db->where('m.site_id',$site_id);
+		$this->db->where('m.parent_id',$parent_id);
+		$this->db->group_by('m.site_menu_id');
+		$this->db->order_by('m.index','ASC');
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $key => $row) {
+			$row = read_prefix_db($row,'mj');
+			$row['grade'] = $this->_read_menu_auth($row['site_menu_id']);
+			$row['children'] = $this->read_menu_list($row['site_menu_id'],$site_id,$language);
+			
+			$list[] = $row;
+		}
+		
+		return $list;
+	}
+	
+	/**
 	 * write_data
 	 * 
 	 * site 생성
@@ -488,6 +637,56 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * write_menu
+	 * 
+	 * ci_site_menu insert
+	 * 
+	 * @param	array	$data
+	 */
+	public function write_menu ($data) {
+		$total = 0;
+		$result = array();
+		
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = $this->model->site['site_id'];
+		}
+		
+		if (!isset($data['parent_id'])) {
+			$data['parent_id'] = 0;
+		}
+		
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
+		}
+		
+		// total
+		$this->db->where('parent_id',$data['parent_id']);
+		$this->db->where('site_id',$data['site_id']);
+		$this->db->group_by('site_menu_id');
+		$total = $this->db->get('site_menu')->num_rows();
+		
+		$data['index'] = 1 + $total;
+		
+		if ($this->db->insert('site_menu',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+			$result['insert_id'] = $this->db->insert_id();
+			
+			if (!isset($data['site_menu_id']) || empty($data['site_menu_id'])) {
+				$this->db->set('site_menu_id',$result['insert_id']);
+				$this->db->where('id',$result['insert_id']);
+				$this->db->update('site_menu');
+			}
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * update_model_auth
 	 * 
 	 * 각 모델별 권한 설정을 수정
@@ -592,6 +791,42 @@ class Model extends CI_Model {
 		
 		$this->db->where('id',$id);
 		if ($this->db->update('site',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_menu
+	 * 
+	 * ci_site_menu update
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_site_menu.site_menu_id
+	 * @param	numberic	$site_id	ci_site.site_id
+	 * @param	string		$language
+	 */
+	public function update_menu ($data,$id,$site_id = 0,$language = '') {
+		$result = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		$this->db->where('site_menu_id',$id);
+		$this->db->where('site_id',$site_id);
+		$this->db->where('language',$language);
+		if ($this->db->update('site_menu',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('system_update_success');
 		} else {
@@ -877,6 +1112,114 @@ class Model extends CI_Model {
 			}
 		}
 		
+		// site_menu table
+		if (!$this->db->table_exists('site_menu')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_menu_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'parent_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'default'=>0
+					),
+					'name'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'uri'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'model'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'model_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'href'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'target'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					),
+					'index'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'is_main'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1,
+						'default'=>'f'
+					),
+					'language'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('site_menu');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
+		// site_menu_auth table
+		if (!$this->db->table_exists('site_menu_auth')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_menu_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'site_member_grade_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'status'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1,
+						'default'=>'t'
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('site_menu_auth');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
 		return $return;
 	}
 	
@@ -896,7 +1239,11 @@ class Model extends CI_Model {
 		$return = $this->dbforge->drop_table('site');
 		if ($return) {
 			$this->dbforge->drop_table('site_member_grade');
-			$this->dbforge->drop_table('site_auth');
+			$this->dbforge->drop_table('site_language');
+			$this->dbforge->drop_table('model_admin');
+			$this->dbforge->drop_table('model_auth');
+			$this->dbforge->drop_table('site_menu');
+			$this->dbforge->drop_table('site_menu_auth');
 		}
 		
 		return $return;

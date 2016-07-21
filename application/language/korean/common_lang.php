@@ -14,6 +14,7 @@ $lang['system_file_delete_question'] = '파일을 삭제하시겠습니까?';
 $lang['system_file_delete_success'] = '파일 삭제에 성공하였습니다.';
 $lang['system_file_delete_danger'] = '파일 삭제에 실패하였습니다.';
 $lang['system_download_danger_empty'] = '파일이 존재하지 않습니다.';
+$lang['system_not_data'] = '데이터가 존재하지 않습니다.';
 
 // text
 $lang['text_submit'] = '확인';
@@ -44,6 +45,17 @@ $lang['text_delete'] = '삭제';
 $lang['text_number'] = '번호';
 $lang['text_update'] = '수정';
 $lang['text_list'] = '목록';
+$lang['text_use_grade'] = '사용 등급';
+$lang['text_model'] = '모델';
+$lang['text_model_id'] = '모델 아이디';
+$lang['text_link_target'] = '새창유무';
+$lang['text_link_target_self'] = '현재창';
+$lang['text_link_target_blank'] = '새창';
+$lang['text_board'] = '게시판';
+$lang['text_page'] = '페이지';
+$lang['text_outpage'] = '외부페이지';
+$lang['text_link'] = '링크';
+$lang['text_guest'] = '비회원';
 
 // site
 $lang['site_name'] = '사이트 이름';
@@ -88,6 +100,6 @@ $lang['admin_menu_board'] = '게시판 설정';
 $lang['admin_menu_site'] = '사이트 관리';
 $lang['admin_menu_page'] = '페이지 관리';
 $lang['admin_menu_file'] = '파일 관리';
-$lang['admin_menu_file_setting'] = '업로드 설정';
+$lang['admin_menu_menu'] = '메뉴 관리';
 $lang['admin_module_install_success'] = '모듈이 설치되었습니다.';
 $lang['admin_module_install_error'] = '모듈 설치에 실패하였습니다.';
