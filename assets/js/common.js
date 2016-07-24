@@ -275,6 +275,11 @@ jQuery(function(){
 		}
 	});
 	
+	// jQuery UI datepicker
+	jQuery('.datepicker').datepicker({
+		dateFormat:'yy-mm-dd'
+	});
+	
 	// jQuery cookie default setting
 	jQuery.cookie.defaults = {path:'/'};
 });

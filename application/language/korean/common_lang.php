@@ -56,6 +56,9 @@ $lang['text_page'] = '페이지';
 $lang['text_outpage'] = '외부페이지';
 $lang['text_link'] = '링크';
 $lang['text_guest'] = '비회원';
+$lang['text_search'] = '검색';
+$lang['text_keyword'] = '검색어';
+$lang['text_date'] = '날자';
 
 // site
 $lang['site_name'] = '사이트 이름';
@@ -101,5 +104,18 @@ $lang['admin_menu_site'] = '사이트 관리';
 $lang['admin_menu_page'] = '페이지 관리';
 $lang['admin_menu_file'] = '파일 관리';
 $lang['admin_menu_menu'] = '메뉴 관리';
+$lang['admin_menu_analytics'] = '접속통계';
 $lang['admin_module_install_success'] = '모듈이 설치되었습니다.';
 $lang['admin_module_install_error'] = '모듈 설치에 실패하였습니다.';
+
+// analytics
+$lang['analytics_browser'] = '인터넷 브라우저';
+$lang['analytics_country'] = '접속 국가';
+$lang['analytics_referral'] = '접속 경로';
+$lang['analytics_favourite_page'] = '인기 페이지';
+$lang['analytics_mobile_device_model'] = '휴대폰 기종';
+$lang['analytics_device_category'] = '디바이스 카테고리';
+$lang['analytics_browser_size'] = '브라우저 사이즈';
+$lang['analytics_visitors'] = '방문자';
+$lang['analytics_new_visitor'] = '신규 방문자';
+$lang['analytics_returning_visitor'] = '기존 방문자';

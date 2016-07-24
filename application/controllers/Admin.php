@@ -256,6 +256,79 @@ class Admin extends CI_Controller {
 	}
 	
 	/**
+	 * analytics
+	 */
+	public function analytics () {
+		$view_id = 0;
+		$data = $result = $analytics = $category = array();
+		
+		$view_id = ($this->input->get('view_id'))?$this->input->get('view_id'):0;
+		$data['analytics_data'] = $this->model->read_analytics();
+		
+		if (isset($data['analytics_data']['view_id']) && !empty($view_id) && $data['analytics_data']['view_id'] != $view_id) {
+			$result = $this->model->update_analytics(array('view_id'=>$view_id),$data['analytics_data']['id']);
+		} else if (!isset($data['analytics_data']['view_id']) && !empty($view_id)) {
+			$result = $this->model->write_analytics(array('view_id'=>$view_id));
+		}
+		
+		if (isset($result['status'])) {
+			$data['analytics_data'] = $this->model->read_analytics();
+		}
+		
+		$data['report'] = ($this->input->get('report'))?$this->input->get('report'):'browser';
+		$data['start_data'] = ($this->input->get('startData'))?$this->input->get('startData'):date('Y-m-d',strtotime('-1 week'));
+		$data['end_data'] = ($this->input->get('endData'))?$this->input->get('endData'):date('Y-m-d');
+		
+		// load google api libraries
+		$this->load->library('google_api');
+		
+		// set JS
+		$this->model->js($this->model->path.'/js/flot/jquery.flot.min.js','footer');
+		$this->model->js($this->model->path.'/js/flot/jquery.flot.resize.js','footer');
+		$this->model->js($this->model->path.'/js/flot/jquery.flot.pie.min.js','footer');
+		$this->model->js($this->model->path.'/js/flot.tooltip/jquery.flot.tooltip.min.js','footer');
+		$this->model->js($this->model->path.'/js/analytics.admin.js','footer');
+		
+		switch ($data['report']) {
+			case 'browser' :
+					$category[] = 'browser';
+					$category[] = 'browserVersion';
+				break;
+			case 'mobileDeviceInfo' :
+					$category[] = 'mobileDeviceInfo';
+					$category[] = 'mobileDeviceBranding';
+				break;
+			default :
+					$category[] = $data['report'];
+				break;
+		}
+		
+		if (isset($data['analytics_data']['id'])) {
+			if ($data['report'] == 'visitor') {
+				$data['data'] = $this->model->analytics_visitor($data['start_data'],$data['end_data']);
+			} else {
+				$data['data'] = $this->google_api->analytics($data['analytics_data']['view_id'],$category,$data['start_data'],$data['end_data']);
+			}
+		} else {
+			$data['data'] = array();
+		}
+		
+		$data['reports'] = array(
+			'browser'=>'analytics_browser',
+			'country'=>'analytics_country',
+			'deviceCategory'=>'analytics_device_category',
+			'page'=>'analytics_favourite_page',
+			'keyword'=>'text_keyword',
+			'referral'=>'analytics_referral',
+			'mobileDeviceInfo'=>'analytics_mobile_device_model',
+			'browserSize'=>'analytics_browser_size',
+			'visitor'=>'analytics_visitors'
+		);
+		
+		$this->load->view('admin/analytics',$data);
+	}
+	
+	/**
 	 * install
 	 * 
 	 * 모듈 갱신

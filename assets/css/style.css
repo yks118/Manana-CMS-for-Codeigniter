@@ -7,6 +7,7 @@ html body {
   /* file upload thumbnails */
   /* pagination */
   /* search */
+  /* flot tooltip */
 }
 html body iframe#hIframe {
   display: none;
@@ -62,6 +63,18 @@ html body ul.pagination {
 }
 html body .form-inline .input-group .form-control {
   width: auto;
+}
+html body .flotChart {
+  height: 500px;
+}
+html body .flotChart .legend table tbody tr td.legendLabel {
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-left: 5px;
+}
+html body .flot-tooltip {
+  background-color: #fff;
+  padding: 3px 5px;
 }
 /* loop default */
 .mt0 {

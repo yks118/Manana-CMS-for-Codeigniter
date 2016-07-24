@@ -18,6 +18,7 @@ class MY_Router extends CI_Router {
 		$admin_method[] = 'updateMenuIndexAjax';
 		$admin_method[] = 'readMenuId';
 		$admin_method[] = 'updateMenuHomeAjax';
+		$admin_method[] = 'analytics';
 		
 		if ($uris[0] == 'admin' && isset($uris[1]) && !in_array($uris[1],$admin_method)) {
 			$this->class = $uris[1];

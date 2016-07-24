@@ -43,6 +43,11 @@ https://github.com/jquery/jquery
 Copyright jQuery Foundation and other contributors, https://jquery.org/
 The MIT License (MIT)
 
+jQuery UI
+https://github.com/jquery/jquery
+Copyright jQuery Foundation and other contributors, https://jquery.org/
+The MIT License (MIT)
+
 Bootstrap v3.3.6
 https://github.com/twbs/bootstrap
 Copyright (c) 2011-2016 Twitter, Inc.
@@ -84,6 +89,21 @@ https://github.com/dbushell/Nestable
 Copyright © 2012 David Bushell
 The MIT License (MIT)
 
+Flot
+http://www.flotcharts.org/
+Copyright (c) 2007-2014 IOLA and Ole Laursen
+The MIT License (MIT)
+
+jquery.flot.tooltip
+https://github.com/krzysu/flot.tooltip
+Copyright (c) 2011-2016 Krzysztof Urbas (@krzysu) & Evan Steinkerchner (@Roundaround).
+The MIT License (MIT)
+
+google-api-php-client
+https://github.com/google/google-api-php-client
+Copyright © 2016 Google
+Apache 2.0 License
+
 
 -----
 
@@ -97,6 +117,8 @@ Copyright (c) 2015 Robert McIntosh
 Copyright (c) 2013 Daniel Eden
 Copyright (c) 2014 Klaus Hartl
 Copyright (c) 2015 Jack Moore
+Copyright (c) 2007-2014 IOLA and Ole Laursen
+Copyright (c) 2011-2016 Krzysztof Urbas (@krzysu) & Evan Steinkerchner (@Roundaround).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

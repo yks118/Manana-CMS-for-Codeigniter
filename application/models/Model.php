@@ -9,6 +9,7 @@ class Model extends CI_Model {
 	public $site = array();
 	public $layout = '';
 	public $menu = array();
+	public $color = array('#f44336','#03a9f4','#8bc34a','#ffeb3b','#009688','#4661ee','#ec5657','#1bcdd1','#8faabb','#b08beb','#3ea0dd','#f5a52a','#23bfaa','#faa586','#eb8cc6');
 	
 	public function __construct () {
 		parent::__construct();
@@ -40,10 +41,12 @@ class Model extends CI_Model {
 		$this->css('//cdnjs.cloudflare.com/ajax/libs/animate.css/3.2.0/animate.min.css');
 		$this->css('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
 		$this->css('//maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css');
+		$this->css('//code.jquery.com/ui/1.12.0/themes/base/jquery-ui.css');
 		$this->css($this->path.'/css/style.less');
 		
 		// js setting
 		$this->js('//ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js','header');
+		$this->js('//code.jquery.com/ui/1.12.0/jquery-ui.min.js','footer');
 		$this->js('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js','footer');
 		$this->js($this->path.'/js/bootstrap-notify/bootstrap-notify.js','footer');
 		$this->js($this->path.'/js/autosize/autosize.js','footer');
@@ -74,6 +77,10 @@ class Model extends CI_Model {
 			$menu_data['menu']['name'] = lang('admin_menu_menu');
 			$menu_data['menu']['href'] = base_url('/admin/menu/');
 			$menu_data['menu']['target'] = '_self';
+			
+			$menu_data['analytics']['name'] = lang('admin_menu_analytics');
+			$menu_data['analytics']['href'] = base_url('/admin/analytics/');
+			$menu_data['analytics']['target'] = '_self';
 		} else {
 			
 			if ($segment && isset($menu_data[$segment]['name'])) {
@@ -293,6 +300,100 @@ class Model extends CI_Model {
 			// insert_batch
 			$this->db->insert_batch('site_menu_auth',$insert_data);
 		}
+	}
+	
+	/**
+	 * analytics_visitor
+	 * 
+	 * google analytics의 방문자 통계
+	 * 
+	 * @param	date	$start		YYYY-mm-dd
+	 * @param	date	$end		YYYY-mm-dd
+	 */
+	public function analytics_visitor ($start,$end) {
+		$new = $returning = 0;
+		$now = $today = $tmp = '';
+		$data = $result = $analytics_data = $visitor_data = $analytics_visitor_data = array();
+		
+		// load google api libraries
+		$this->load->library('google_api');
+		
+		$analytics_data = $this->read_analytics();
+		
+		$this->db->select('*');
+		$this->db->from('site_visitor');
+		$this->db->where('date >=',$start);
+		$this->db->where('date <=',$end);
+		$this->db->order_by('date','ASC');
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $row) {
+			$visitor_data[preg_replace('/-/i','',$row['date'])] = $row;
+		}
+		
+		$today = date('Ymd');
+		$now = $start = preg_replace('/-/i','',$start);
+		$end = preg_replace('/-/i','',$end);
+		$data['visitor'] = array();
+		
+		while ($now <= $end) {
+			$new = $returning = 0;
+			
+			if (isset($analytics_data['id'])) {
+				if (isset($visitor_data[$now])) {
+					$new = $visitor_data[$now]['new'];
+					$returning = $visitor_data[$now]['returning'];
+				} else if ($today != $now) {
+					$tmp = preg_replace('/([0-9]{4})([0-9]{2})([0-9]{2})/i','$1-$2-$3',$now);
+					$analytics_visitor_data = $this->google_api->analytics($analytics_data['view_id'],array('userType'),$tmp,$tmp);
+					
+					if (isset($analytics_visitor_data['userType'])) {
+						if ($analytics_visitor_data['userType'][0]['dimensions'][0] == 'New Visitor') {
+							$new = $analytics_visitor_data['userType'][0]['data'];
+							$returning = (isset($analytics_visitor_data['userType'][1]))?$analytics_visitor_data['userType'][1]['data']:0;
+						} else {
+							$new = (isset($analytics_visitor_data['userType'][1]))?$analytics_visitor_data['userType'][1]['data']:0;
+							$returning = $analytics_visitor_data['userType'][0]['data'];
+						}
+					}
+					
+					$this->db->set('site_analytics_id',$analytics_data['id']);
+					$this->db->set('date',$tmp);
+					$this->db->set('new',$new);
+					$this->db->set('returning',$returning);
+					$this->db->insert('site_visitor');
+				} else {
+					// today
+					$tmp = preg_replace('/([0-9]{4})([0-9]{2})([0-9]{2})/i','$1-$2-$3',$now);
+					$analytics_visitor_data = $this->cache->file->get('visitor_today');
+					
+					if (isset($analytics_visitor_data['date']) && $analytics_visitor_data['date'] == $now) {
+						$new = $analytics_visitor_data['new'];
+						$returning = $analytics_visitor_data['returning'];
+					} else {
+						$this->cache->file->delete('visitor_today');
+						$analytics_visitor_data = $this->google_api->analytics($analytics_data['view_id'],array('userType'),$tmp,$tmp);
+						
+						if (isset($analytics_visitor_data['userType'])) {
+							if ($analytics_visitor_data['userType'][0]['dimensions'][0] == 'New Visitor') {
+								$new = $analytics_visitor_data['userType'][0]['data'];
+								$returning = (isset($analytics_visitor_data['userType'][1]))?$analytics_visitor_data['userType'][1]['data']:0;
+							} else {
+								$new = (isset($analytics_visitor_data['userType'][1]))?$analytics_visitor_data['userType'][1]['data']:0;
+								$returning = $analytics_visitor_data['userType'][0]['data'];
+							}
+						}
+						
+						$this->cache->file->save('visitor_today',array('site_analytics_id'=>$analytics_data['id'],'date'=>$now,'new'=>$new,'returning'=>$returning));
+					}
+				}
+			}
+			
+			$data['visitor'][$now] = array('site_analytics_id'=>$analytics_data['id'],'date'=>$now,'new'=>$new,'returning'=>$returning);
+			$now = date('Ymd',strtotime('+1 day',strtotime($now.'000000')));
+		}
+		
+		return $data;
 	}
 	
 	/**
@@ -519,6 +620,29 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * read_analytics
+	 * 
+	 * get google analytics info
+	 * 
+	 * @param	numberic	$site_id		ci_site.site_id
+	 */
+	public function read_analytics ($site_id = 0) {
+		$data = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->site['site_id'];
+		}
+		
+		$this->db->select('*');
+		$this->db->from('site_analytics');
+		$this->db->where('site_id',$site_id);
+		$this->db->limit(1);
+		$data = $this->db->get()->row_array();
+		
+		return $data;
+	}
+	
+	/**
 	 * write_data
 	 * 
 	 * site 생성
@@ -687,6 +811,33 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * write_analytics
+	 * 
+	 * insert google analytics view_id
+	 * 
+	 * @param	array	$data
+	 */
+	public function write_analytics ($data) {
+		$result = array();
+		
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = $this->model->site['site_id'];
+		}
+		
+		if ($this->db->insert('site_analytics',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+			$result['insert_id'] = $this->db->insert_id();
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * update_model_auth
 	 * 
 	 * 각 모델별 권한 설정을 수정
@@ -827,6 +978,36 @@ class Model extends CI_Model {
 		$this->db->where('site_id',$site_id);
 		$this->db->where('language',$language);
 		if ($this->db->update('site_menu',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * update_analytics
+	 * 
+	 * update google analytics view_id
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_site_analytics.id
+	 * @param	numberic	$site_id	ci_site.site_id
+	 */
+	public function update_analytics ($data,$id,$site_id = 0) {
+		$result = array();
+		
+		if (empty($site_id)) {
+			$site_id = $this->model->site['site_id'];
+		}
+		
+		$this->db->where('id',$id);
+		$this->db->where('site_id',$site_id);
+		if ($this->db->update('site_analytics',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('system_update_success');
 		} else {
@@ -1220,6 +1401,71 @@ class Model extends CI_Model {
 			}
 		}
 		
+		// site_analytics
+		if (!$this->db->table_exists('site_analytics')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'view_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('site_analytics');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
+		if (!$this->db->table_exists('site_visitor')) {
+			if ($flag) {
+				$fields = array(
+					'id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE,
+						'auto_increment'=>TRUE
+					),
+					'site_analytics_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'date'=>array(
+						'type'=>'DATE'
+					),
+					'new'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'returning'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$this->dbforge->add_key('id',TRUE);
+				$return = $this->dbforge->create_table('site_visitor');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
 		return $return;
 	}
 	
@@ -1244,6 +1490,8 @@ class Model extends CI_Model {
 			$this->dbforge->drop_table('model_auth');
 			$this->dbforge->drop_table('site_menu');
 			$this->dbforge->drop_table('site_menu_auth');
+			$this->dbforge->drop_table('site_analytics');
+			$this->dbforge->drop_table('site_visitor');
 		}
 		
 		return $return;
