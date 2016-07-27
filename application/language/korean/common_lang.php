@@ -59,6 +59,8 @@ $lang['text_guest'] = '비회원';
 $lang['text_search'] = '검색';
 $lang['text_keyword'] = '검색어';
 $lang['text_date'] = '날자';
+$lang['text_writer'] = '작성자';
+$lang['text_hit'] = '조회수';
 
 // site
 $lang['site_name'] = '사이트 이름';
@@ -94,6 +96,7 @@ $lang['member_memo'] = '메모';
 $lang['member_description'] = '자기소개';
 $lang['member_grade'] = '회원등급';
 $lang['member_last_login'] = '최근 로그인 일시';
+$lang['member_logout'] = '로그아웃';
 
 // admin
 $lang['admin_menu_dashboard'] = '대시보드';
@@ -116,6 +119,7 @@ $lang['analytics_favourite_page'] = '인기 페이지';
 $lang['analytics_mobile_device_model'] = '휴대폰 기종';
 $lang['analytics_device_category'] = '디바이스 카테고리';
 $lang['analytics_browser_size'] = '브라우저 사이즈';
-$lang['analytics_visitors'] = '방문자';
+$lang['analytics_visitors'] = '방문자 통계';
 $lang['analytics_new_visitor'] = '신규 방문자';
 $lang['analytics_returning_visitor'] = '기존 방문자';
+$lang['analytics_member'] = '회원 통계';

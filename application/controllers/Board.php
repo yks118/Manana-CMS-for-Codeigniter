@@ -2,6 +2,8 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Board extends CI_Controller {
+	private $board_config = array();
+	
 	public function __construct () {
 		parent::__construct();
 		
@@ -10,6 +12,168 @@ class Board extends CI_Controller {
 		
 		// load common board js
 		$this->model->js($this->model->path.'/views/admin/board/js/board.js');
+		
+		if (isset($this->model->now_menu['name'])) {
+			if (!(in_array(0,$this->model->now_menu['grade']) && !isset($this->member->data['id']))) {
+				$auth_check = FALSE;
+				foreach ($this->model->now_menu['grade'] as $grade_id) {
+					if (isset($this->member->data['grade'][$grade_id])) {
+						$auth_check = TRUE;
+						break;
+					}
+				}
+				
+				if (
+					$auth_check == FALSE ||
+					(
+						(isset($this->board->auth[$this->router->method]) && !$this->board->auth[$this->router->method]) ||
+						(isset($this->board->auth[$this->router->method.'Form']) && !$this->board->auth[$this->router->method.'Form'])
+					)
+				) {
+					set_cookie('noti',lang('system_auth_danger'),0);
+					set_cookie('noti_type','danger',0);
+					redirect('/');
+				}
+			}
+			
+			$this->model->html['site_title'] = $this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
+			$this->board_config = $this->board->read_config_id($this->model->now_menu['model_id']);
+		}
+	}
+	
+	/**
+	 * index
+	 * 
+	 * board list
+	 */
+	public function index () {
+		$language = '';
+		$limit = $page = 0;
+		$data = array();
+		
+		$limit = $this->board_config['limit'];
+		$page = ($this->input->get('page'))?$this->input->get('page'):1;
+		$language = $this->config->item('language');
+		
+		$data['field'] = $this->input->get('field');
+		$data['keyword'] = $this->input->get('keyword');
+		$data['total'] = $this->board->read_total($this->board_config['board_config_id']);
+		$data['list'] = $this->board->read_list($this->model->now_menu['model_id'],$data['total'],$limit,$page,$language,$data['field'],$data['keyword']);
+		$data['pagination'] = $this->model->pagination($data['total'],$limit);
+		
+		$this->load->view('board/'.$this->board_config['skin'].'/list',$data);
+	}
+	
+	/**
+	 * write
+	 * 
+	 * board write
+	 */
+	public function write () {
+		$data = array();
+		
+		$data['action'] = 'write';
+		$data['data']['board_config_id'] = $this->board_config['board_config_id'];
+		
+		$this->load->view('board/'.$this->board_config['skin'].'/write',$data);
+	}
+	
+	/**
+	 * writeForm
+	 * 
+	 * DB insert
+	 */
+	public function writeForm () {
+		$data = $result = array();
+		
+		$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
+		$result = $this->board->write_data($data);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$result['insert_id']).'";');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
+	
+	/**
+	 * view
+	 * 
+	 * board view
+	 * 
+	 * @param	numberic	$id		ci_board.board_id
+	 */
+	public function view ($id) {
+		$data = array();
+		
+		$data['data'] = $this->board->read_id($id);
+		$this->model->html['site_title'] = $data['data']['title'].' - '.$this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
+		
+		// add reader
+		$this->board->reader($id);
+		
+		$this->load->view('board/'.$this->board_config['skin'].'/view',$data);
+	}
+	
+	/**
+	 * update
+	 * 
+	 * board update
+	 * 
+	 * @param	numberic	$id		ci_board.board_id
+	 */
+	public function update ($id) {
+		$data = array();
+		
+		$data['action'] = 'update';
+		$data['data'] = $this->board->read_id($id);
+		
+		$this->load->view('board/'.$this->board_config['skin'].'/write',$data);
+	}
+	
+	/**
+	 * updateForm
+	 * 
+	 * DB update
+	 */
+	public function updateForm () {
+		$data = $result = array();
+		
+		$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
+		$result = $this->board->update_data($data,$data['board_id'],$data['language']);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$data['board_id']).'";');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
+	
+	/**
+	 * delete
+	 */
+	public function delete ($id) {
+		$result = array();
+		
+		$result = $this->board->delete_data($id);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/').'";');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
 	}
 	
 	/**
@@ -43,6 +207,12 @@ class Board extends CI_Controller {
 		$data['data'] = array();
 		$data['skin_list'] = read_folder_list('./application/views/board/');
 		$data['member_grade_list'] = $this->member->read_site_grade_list();
+		$data['member_grade_list'][] = array(
+			'id'=>0,
+			'site_id'=>0,
+			'site_member_grade_id'=>0,
+			'name'=>lang('text_guest')
+		);
 		$data['action'] = 'write';
 		
 		$this->load->view('admin/board/config_write',$data);
@@ -99,6 +269,12 @@ class Board extends CI_Controller {
 		$data['auth'] = $this->model->read_model_auth('board',$config_id);
 		$data['skin_list'] = read_folder_list('./application/views/board/');
 		$data['member_grade_list'] = $this->member->read_site_grade_list();
+		$data['member_grade_list'][] = array(
+			'id'=>0,
+			'site_id'=>0,
+			'site_member_grade_id'=>0,
+			'name'=>lang('text_guest')
+		);
 		$data['action'] = 'update';
 		
 		$this->load->view('admin/board/config_write',$data);

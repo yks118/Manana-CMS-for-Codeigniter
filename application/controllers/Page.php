@@ -5,8 +5,23 @@ class Page extends CI_Controller {
 	public function __construct() {
 		parent::__construct();
 		
+		// load model page
+		$this->load->model(array('page_model'=>'page'));
+		
 		// load common page js
 		$this->model->js($this->model->path.'/views/admin/page/js/page.js');
+		
+		if (isset($this->model->now_menu['name'])) {
+			$this->model->html['site_title'] = $this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
+		}
+	}
+	
+	public function index () {
+		$data = array();
+		
+		$data = $this->page->read_id($this->model->now_menu['model_id']);
+		
+		$this->load->view('page',$data);
 	}
 	
 	/**

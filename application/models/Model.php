@@ -9,6 +9,7 @@ class Model extends CI_Model {
 	public $site = array();
 	public $layout = '';
 	public $menu = array();
+	public $now_menu = array();
 	public $color = array('#f44336','#03a9f4','#8bc34a','#ffeb3b','#009688','#4661ee','#ec5657','#1bcdd1','#8faabb','#b08beb','#3ea0dd','#f5a52a','#23bfaa','#faa586','#eb8cc6');
 	
 	public function __construct () {
@@ -60,9 +61,10 @@ class Model extends CI_Model {
 	 * 메뉴 설정
 	 * 
 	 * @param	string		$segment		uri first segment
+	 * @param	numberic	$parent_id		ci_site_menu.parent_id
 	 */
-	private function _menu ($segment = '') {
-		$menu_data = array();
+	private function _menu ($segment = '',$parent_id = 0) {
+		$menu_data = $menu_list = array();
 		
 		if ($segment == 'admin') {
 			// dashboard
@@ -82,9 +84,28 @@ class Model extends CI_Model {
 			$menu_data['analytics']['href'] = base_url('/admin/analytics/');
 			$menu_data['analytics']['target'] = '_self';
 		} else {
+			$menu_list = $this->read_menu_list($parent_id);
 			
-			if ($segment && isset($menu_data[$segment]['name'])) {
-				$this->html['site_title'] = $menu_data[$segment]['name'].' :: '.$this->html['site_title'];
+			foreach ($menu_list as $row) {
+				$menu_data[$row['uri']]['name'] = $row['name'];
+				$menu_data[$row['uri']]['href'] = ($row['model'] == 'outpage')?$row['href']:base_url('/'.$row['uri'].'/');
+				$menu_data[$row['uri']]['target'] = $row['target'];
+				$menu_data[$row['uri']]['class'] = array();
+				
+				$menu_data[$row['uri']]['children'] = $this->_menu($segment,$row['site_menu_id']);
+				
+				foreach ($menu_data[$row['uri']]['children'] as $children) {
+					if (in_array('active',$children['class'])) {
+						$menu_data[$row['uri']]['class'][] = 'active';
+						break;
+					}
+				}
+				
+				if (($segment == $row['uri']) || (empty($segment) && $row['is_main'] == 't')) {
+					$this->now_menu = $row;
+					$this->layout = $row['layout'];
+					$menu_data[$row['uri']]['class'][] = 'active';
+				}
 			}
 		}
 		
@@ -339,7 +360,7 @@ class Model extends CI_Model {
 		while ($now <= $end) {
 			$new = $returning = 0;
 			
-			if (isset($analytics_data['id'])) {
+			if (isset($analytics_data['id']) && $now <= $today) {
 				if (isset($visitor_data[$now])) {
 					$new = $visitor_data[$now]['new'];
 					$returning = $visitor_data[$now]['returning'];
@@ -502,7 +523,7 @@ class Model extends CI_Model {
 		
 		// check ci_site.id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		$this->db->select('*');
@@ -558,7 +579,7 @@ class Model extends CI_Model {
 		$data = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		if (empty($language)) {
@@ -592,7 +613,7 @@ class Model extends CI_Model {
 		$list = $result = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		if (empty($language)) {
@@ -728,7 +749,7 @@ class Model extends CI_Model {
 		
 		// check ci_site.id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		foreach ($data as $key => $row) {
@@ -821,7 +842,7 @@ class Model extends CI_Model {
 		$result = array();
 		
 		if (!isset($data['site_id'])) {
-			$data['site_id'] = $this->model->site['site_id'];
+			$data['site_id'] = $this->site['site_id'];
 		}
 		
 		if ($this->db->insert('site_analytics',$data)) {
@@ -854,7 +875,7 @@ class Model extends CI_Model {
 		
 		// check ci_site.id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		foreach ($data as $key => $row) {
@@ -967,7 +988,7 @@ class Model extends CI_Model {
 		$result = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		if (empty($language)) {
@@ -1002,7 +1023,7 @@ class Model extends CI_Model {
 		$result = array();
 		
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		$this->db->where('id',$id);
@@ -1033,7 +1054,7 @@ class Model extends CI_Model {
 		
 		// check site_id
 		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+			$site_id = $this->site['site_id'];
 		}
 		
 		// delete DB
@@ -1339,6 +1360,11 @@ class Model extends CI_Model {
 					'href'=>array(
 						'type'=>'VARCHAR',
 						'constraint'=>255
+					),
+					'layout'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255,
+						'default'=>'basic'
 					),
 					'target'=>array(
 						'type'=>'VARCHAR',

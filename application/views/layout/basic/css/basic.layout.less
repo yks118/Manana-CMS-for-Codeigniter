@@ -1,0 +1,115 @@
+body {
+  padding:15px 0px;
+  
+  #basicLayout {
+    width:1024px;
+    margin:0px auto;
+    padding:15px;
+    border:1px solid #cdcdcd;
+    overflow:hidden;
+    
+    .headerLayout {
+      a.logo {
+        font-size:2em;
+        text-decoration:none;
+      }
+      
+      ul.lnb {
+        background-color:#337ab7;
+        list-style:none;
+        margin-top:15px;
+        margin-bottom:15px;
+        padding-left:0px;
+        height:40px;
+        position:relative;
+        
+        li.lnb {
+          float:left;
+          position:relative;
+          
+          a.lnb {
+            color:#fff;
+            line-height:40px;
+            display:block;
+            padding:0px 15px;
+          }
+          
+          ul.snb {
+            border-top:1px solid #fff;
+            background-color:#337ab7;
+            list-style:none;
+            padding-left:0px;
+            position:absolute;
+            min-width:100%;
+            
+            overflow:hidden;
+            opacity:0;
+            transform:scaleY(0);
+            transform-origin:50% 0%;
+            transition:transform 300ms, opacity 300ms;
+            
+            li.snb {
+              position:relative;
+              
+              a.snb {
+                color:#fff;
+                line-height:40px;
+                display:block;
+                padding:0px 15px;
+              }
+            }
+            
+            li.snb.active {
+              a.snb {
+                font-weight:bold;
+              }
+            }
+          }
+        }
+        
+        li.lnb.active {
+          a.lnb {
+            font-weight:bold;
+          }
+        }
+        
+        li.lnb:hover {
+          ul.snb {
+            transform:scaleY(1);
+            opacity:1;
+          }
+        }
+      }
+    }
+    
+    aside {
+      float:left;
+      width:200px;
+      
+      ul.snb {
+        margin-top:15px;
+        
+        li.snb {
+          margin-top:5px;
+          background-color:#d9d9d9;
+          
+          a.snb {
+            padding:10px;
+            display:block;
+          }
+        }
+        
+        li.snb.active {
+          a.snb {
+            font-weight:bold;
+          }
+        }
+      }
+    }
+    
+    .documentLayout {
+      padding-left:15px;
+      overflow:hidden;
+    }
+  }
+}

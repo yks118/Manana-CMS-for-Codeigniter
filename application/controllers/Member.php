@@ -38,7 +38,26 @@ class Member extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/').'";');
+			echo js('parent.document.location.href = parent.document.location.href;');
+		} else {
+			// error
+			echo notify($result['message'],'danger',TRUE);
+		}
+	}
+	
+	/**
+	 * logout
+	 */
+	public function logout () {
+		$result = array();
+		
+		$result = $this->member->logout();
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',$result['message'],0);
+			set_cookie('noti_type','success',0);
+			echo js('parent.document.location.href = parent.document.location.href;');
 		} else {
 			// error
 			echo notify($result['message'],'danger',TRUE);

@@ -72,6 +72,14 @@ html body .flotChart .legend table tbody tr td.legendLabel {
   padding-bottom: 3px;
   padding-left: 5px;
 }
+html body .barChart {
+  height: 250px;
+}
+html body .barChart .legend table tbody tr td.legendLabel {
+  padding-top: 2px;
+  padding-bottom: 2px;
+  padding-left: 5px;
+}
 html body .flot-tooltip {
   background-color: #fff;
   padding: 3px 5px;

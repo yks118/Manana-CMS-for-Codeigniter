@@ -3,6 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Board_model extends CI_Model {
 	public $menu = array();
+	public $auth = array();
 	
 	public function __construct () {
 		parent::__construct();
@@ -11,6 +12,81 @@ class Board_model extends CI_Model {
 			$this->menu['board']['name'] = lang('admin_menu_board');
 			$this->menu['board']['href'] = base_url('/admin/board/config');
 			$this->menu['board']['target'] = '_self';
+		} else if (isset($this->model->now_menu['model']) && $this->model->now_menu['model'] == 'board') {
+			$id = ($this->uri->segment(3))?$this->uri->segment(3):$this->uri->segment(2);
+			$this->auth = $this->_auth($this->model->now_menu['model_id'],$id);
+		}
+	}
+	
+	/**
+	 * _auth
+	 * 
+	 * 각 권한을 설정해서 넘김..
+	 * 
+	 * @param	numberic	$config_id		ci_board_config.board_config_id
+	 */
+	private function _auth ($config_id,$id = 0) {
+		$member_id = 0;
+		$data = $model_auth = $document_data = array();
+		
+		if (isset($this->member->data['id'])) {
+			$member_id = $this->member->data['id'];
+		}
+		
+		$model_auth = $this->model->read_model_auth('board',$config_id);
+		
+		foreach ($model_auth as $action => $row) {
+			$data[$action] = (in_array($member_id,$row))?TRUE:FALSE;
+		}
+		
+		if ($id) {
+			$document_data = $this->read_id($id);
+			
+			if ($document_data['member_id'] == $member_id) {
+				$data['update'] = TRUE;
+				$data['delete'] = TRUE;
+			}
+		}
+		
+		return $data;
+	}
+	
+	/**
+	 * reader
+	 * 
+	 * board reader check & insert
+	 * 
+	 * @param	numberic	$board_id		ci_board.board_id
+	 */
+	public function reader ($board_id) {
+		$today = '';
+		$data = array();
+		
+		$today = date('Y-m-d');
+		
+		if (isset($this->member->data['id'])) {
+			// login
+			$this->db->where('member_id',$this->member->data['id']);
+		} else {
+			// guest
+			$this->db->where('ip',$this->input->ip_address());
+		}
+		
+		$this->db->where('datetime >=',$today.' 00:00:00');
+		$this->db->where('datetime <=',$today.' 23:59:59');
+		
+		if ($this->db->get('board_reader')->num_rows() == 0) {
+			if (isset($this->member->data['id'])) {
+				// login
+				$this->db->set('member_id',$this->member->data['id']);
+			} else {
+				// guest
+				$this->db->set('ip',$this->input->ip_address());
+			}
+			
+			$this->db->set('datetime',date('Y-m-d H:i:s'));
+			$this->db->set('board_id',$board_id);
+			$this->db->insert('board_reader');
 		}
 	}
 	
@@ -71,6 +147,37 @@ class Board_model extends CI_Model {
 	}
 	
 	/**
+	 * read_id
+	 * 
+	 * get ci_board row
+	 * 
+	 * @param	numberic	$id			ci_board.board_id
+	 * @param	string		$language
+	 */
+	public function read_id ($id,$language = '') {
+		$data = $result = $tmp = array();
+		
+		$this->db->select(write_prefix_db($this->db->list_fields('board'),array('b','bj')).', m.name AS member_name, COUNT(mr.board_id) AS hit');
+		$this->db->from('board b');
+		$this->db->join('board bj','b.board_id = bj.board_id AND bj.language = "'.$language.'"','LEFT');
+		$this->db->join('member m','b.member_id = m.id','LEFT');
+		$this->db->join('board_reader mr','b.board_id = mr.board_id','LEFT');
+		$this->db->where('b.board_id',$id);
+		$this->db->group_by('b.board_id');
+		$this->db->limit(1);
+		$result = $tmp = $this->db->get()->row_array();
+		
+		unset($tmp['member_name']);
+		$data = read_prefix_db($tmp,'bj');
+		
+		if (isset($data['member_id']) && !isset($data['name'])) {
+			$data['name'] = $result['member_name'];
+		}
+		
+		return $data;
+	}
+	
+	/**
 	 * read_config_id
 	 * 
 	 * 게시판 설정을 ci_board_config.id로 검색 후 리턴
@@ -100,6 +207,96 @@ class Board_model extends CI_Model {
 		$data = read_prefix_db($this->db->get()->row_array(),'cj');
 		
 		return $data;
+	}
+	
+	/**
+	 * read_list
+	 * 
+	 * 게시판의 게시글 리스트를 리턴
+	 * 
+	 * @param	numberic	$config_id		ci_board_config.board_config_id
+	 * @param	numberic	$total			board total
+	 * @param	numberic	$limit			limit
+	 * @param	numberic	$page
+	 * @param	numberic	$site_id		ci_board_config.site_id
+	 * @param	string		$language
+	 * @param	array		$field
+	 * @param	array		$keyword
+	 */
+	public function read_list ($config_id,$total = 0,$limit = 20,$page = 0,$language = '',$field = array(),$keyword = array()) {
+		$offset = 0;
+		$list = $result = $tmp = $fields = $keywords = array();
+		
+		if (empty($page)) {
+			$page = 1;
+		}
+		
+		if (empty($total)) {
+			$total = $this->read_total($config_id);
+		}
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		if (is_array($field)) {
+			$fields = $field;
+		} else {
+			$fields[] = $field;
+		}
+		
+		if (is_array($keyword)) {
+			$keywords = $keyword;
+		} else {
+			$keywords[] = $keyword;
+		}
+		
+		$offset = ($page - 1) * $limit;
+		
+		// get DB
+		$this->db->select(write_prefix_db($this->db->list_fields('board'),array('b','bj')).', m.name AS member_name, COUNT(*) AS hit');
+		$this->db->from('board b');
+		$this->db->join('board bj','b.board_config_id = bj.board_config_id AND bj.language = "'.$language.'"','LEFT');
+		$this->db->join('member m','b.member_id = m.id','LEFT');
+		$this->db->join('board_reader mr','b.board_id = mr.board_id','LEFT');
+		
+		foreach ($fields as $key => $value) {
+			if (isset($fields[$key])) {
+				switch ($fields[$key]) {
+					case 'name' :
+							$this->db->like('bj.name',$keywords[$key],'both');
+							$this->db->or_like('m.name',$keywords[$key],'both');
+						break;
+					default :
+							$this->db->like('bj.'.$fields[$key],$keywords[$key],'both');
+						break;
+				}
+			}
+		}
+		
+		$this->db->group_by('b.board_id');
+		$this->db->order_by('b.id','DESC');
+		$this->db->offset($offset);
+		$this->db->limit($limit);
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $key => $row) {
+			$tmp = array();
+			$tmp['name'] = $row['member_name'];
+			$tmp['hit'] = $row['hit'];
+			
+			$row = read_prefix_db($row,'bj');
+			$row['number'] = $total - $key;
+			$row['hit'] = $tmp['hit'];
+			
+			if (isset($tmp['name'])) {
+				$row['name'] = $tmp['name'];
+			}
+			
+			$list[] = $row;
+		}
+		
+		return $list;
 	}
 	
 	/**
@@ -173,6 +370,64 @@ class Board_model extends CI_Model {
 	}
 	
 	/**
+	 * write_data
+	 * 
+	 * insert board
+	 * 
+	 * @param	array	$data
+	 */
+	public function write_data ($data) {
+		$result = array();
+		
+		if (!isset($data['board_config_id'])) {
+			$data['board_config_id'] = $this->model->now_menu['model_id'];
+		}
+		
+		if (!isset($data['member_id']) && isset($this->member->data['id'])) {
+			$data['member_id'] = $this->member->data['id'];
+		}
+		
+		if (!isset($data['write_datetime'])) {
+			$data['write_datetime'] = date('Y-m-d H:i:s');
+		}
+		
+		if (!isset($data['update_datetime'])) {
+			$data['update_datetime'] = $data['write_datetime'];
+		}
+		
+		if (!isset($data['last_datetime'])) {
+			$data['last_datetime'] = $data['write_datetime'];
+		}
+		
+		if (!isset($data['ip'])) {
+			$data['ip'] = $this->input->ip_address();
+		}
+		
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
+		}
+		
+		// insert ci_board_config
+		if ($this->db->insert('board',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+			$result['insert_id'] = $this->db->insert_id();
+			
+			if (!isset($data['board_id']) || empty($data['board_id'])) {
+				$this->db->set('board_id',$result['insert_id']);
+				$this->db->where('id',$result['insert_id']);
+				$this->db->update('board');
+			}
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * write_config
 	 * 
 	 * 게시판 설정 추가
@@ -214,6 +469,44 @@ class Board_model extends CI_Model {
 	}
 	
 	/**
+	 * update_data
+	 * 
+	 * board update
+	 * 
+	 * @param	array		$data
+	 * @param	numberic	$id			ci_board.board_id
+	 * @param	string		$language
+	 */
+	public function update_data ($data,$id,$language = '') {
+		$result = array();
+		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
+		if (isset($data['update_datetime'])) {
+			$data['update_datetime'] = date('Y-m-d H:i:s');
+		}
+		
+		if (isset($data['last_datetime'])) {
+			$data['last_datetime'] = $data['update_datetime'];
+		}
+		
+		$this->db->where('language',$language);
+		$this->db->where('board_id',$id);
+		if ($this->db->update('board',$data)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * update_config
 	 * 
 	 * 게시판 설정 업데이트
@@ -245,6 +538,29 @@ class Board_model extends CI_Model {
 		if ($this->db->update('board_config',$data)) {
 			$result['status'] = TRUE;
 			$result['message'] = lang('system_update_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = $this->db->_error_message();
+			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * delete_data
+	 * 
+	 * DB delete
+	 * 
+	 * @param	numberic	$id		ci_board.board_id
+	 */
+	public function delete_data ($id) {
+		$result = array();
+		
+		$this->db->where('board_id',$id);
+		if ($this->db->delete('board')) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('board_config_delete_success');
 		} else {
 			$result['status'] = FALSE;
 			$result['message'] = $this->db->_error_message();
@@ -330,7 +646,8 @@ class Board_model extends CI_Model {
 					'parent_id'=>array(
 						'type'=>'INT',
 						'constraint'=>11,
-						'unsigned'=>TRUE
+						'unsigned'=>TRUE,
+						'default'=>0
 					),
 					'title'=>array(
 						'type'=>'VARCHAR',
@@ -459,6 +776,36 @@ class Board_model extends CI_Model {
 			}
 		}
 		
+		// board_reader table
+		if (!$this->db->table_exists('board_reader')) {
+			if ($flag) {
+				$fields = array(
+					'board_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					),
+					'datetime'=>array(
+						'type'=>'DATETIME',
+						'default'=>'0000-00-00 00:00:00'
+					),
+					'ip'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>45
+					),
+					'member_id'=>array(
+						'type'=>'INT',
+						'constraint'=>11,
+						'unsigned'=>TRUE
+					)
+				);
+				$this->dbforge->add_field($fields);
+				$return = $this->dbforge->create_table('board_reader');
+			} else if (!$return) {
+				$return = TRUE;
+			}
+		}
+		
 		return $return;
 	}
 	
@@ -469,5 +816,18 @@ class Board_model extends CI_Model {
 	 * 
 	 * @return	string	true / false
 	 */
-	public function uninstall () {}
+	public function uninstall () {
+		$return = FALSE;
+		
+		// dbforge load
+		$this->load->dbforge();
+		
+		$return = $this->dbforge->drop_table('board');
+		if ($return) {
+			$this->dbforge->drop_table('board_config');
+			$this->dbforge->drop_table('board_reader');
+		}
+		
+		return $return;
+	}
 }

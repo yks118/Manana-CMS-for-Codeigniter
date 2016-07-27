@@ -84,6 +84,7 @@ class manana_hook {
 	 */
 	public function display_override () {
 		global $OUT;
+		$data = array();
 		$output = $this->CI->output->get_output();
 		
 		// json check
@@ -94,10 +95,15 @@ class manana_hook {
 			// html
 			$this->CI->model->html['site_lang'] = $this->site_lang;
 			
+			if (isset($this->CI->member->data['id'])) {
+				$data['loginForm'] = $this->CI->load->view('member/'.$this->CI->member->skin.'/loginInfo',$data,TRUE);
+			} else {
+				$data['loginForm'] = $this->CI->load->view('member/'.$this->CI->member->skin.'/loginForm',$data,TRUE);
+			}
+			
 			if (empty($this->CI->model->layout)) {
 				$this->CI->model->html['layout'] = $output;
 			} else {
-				$data = array();
 				$data['page'] = $output;
 				$this->CI->model->html['layout'] = $this->CI->load->view('layout/'.$this->CI->model->layout.'/layout',$data,TRUE);
 			}

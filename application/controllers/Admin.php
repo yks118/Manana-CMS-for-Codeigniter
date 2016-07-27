@@ -36,8 +36,16 @@ class Admin extends CI_Controller {
 	 * admin 페이지 기본 화면..
 	 */
 	public function dashboard () {
-		$data = array();
-		$data['model_check'] = array();
+		$data = $analytics_data = array();
+		
+		// set JS
+		$this->model->js($this->model->path.'/js/flot/jquery.flot.min.js','footer');
+		$this->model->js($this->model->path.'/js/flot/jquery.flot.resize.js','footer');
+		$this->model->js($this->model->path.'/js/flot/jquery.flot.categories.min.js','footer');
+		$this->model->js($this->model->path.'/js/flot.tooltip/jquery.flot.tooltip.min.js','footer');
+		$this->model->js($this->model->path.'/js/dashboard.admin.js','footer');
+		
+		$data = $this->model->analytics_visitor(date('Y-m-d',strtotime('-'.number_format(7 + date('w')).'day')),date('Y-m-d',strtotime('+'.number_format(6 - date('w')).'day')));
 		
 		foreach ($this as $key => $row) {
 			if (method_exists($this->$key,'install')) {
@@ -46,6 +54,8 @@ class Admin extends CI_Controller {
 				}
 			}
 		}
+		
+		$data['week'] = array('Sun','Mon','Tue','Wed','Thu','Fri','Sat');
 		
 		$this->load->view('admin/dashboard',$data);
 	}
@@ -116,6 +126,7 @@ class Admin extends CI_Controller {
 			'site_member_grade_id'=>0,
 			'name'=>lang('text_guest')
 		);
+		$data['layout_list'] = read_folder_list('./application/views/layout/');
 		
 		$this->load->view('admin/menu',$data);
 	}

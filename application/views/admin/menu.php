@@ -118,6 +118,17 @@
 			</div>
 			
 			<div class="form-group">
+				<label for="menu_layout">Layout</label>
+				<select class="form-control" name="menu_layout" id="menu_layout">
+					<?php foreach ($layout_list as $layout) {
+						if ($layout != 'admin') { ?>
+					<option value="<?php echo $layout; ?>"><?php echo $layout; ?></option>
+						<?php }
+					} ?>
+				</select>
+			</div>
+			
+			<div class="form-group">
 				<label for="grade"><?php echo lang('text_use_grade'); ?></label>
 				<div>
 					<?php foreach ($site_member_grade_list as $row) { ?>

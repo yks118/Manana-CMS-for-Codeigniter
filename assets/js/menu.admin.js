@@ -77,7 +77,7 @@ function clickMenuAdd (parent_id) {
 	document.fwrite.menu_uri.value = '';
 	document.fwrite.menu_href.value = '';
 	
-	jQuery('#fwrite').find('[name="menu_model"]').children('option').eq(0).prop('selected',true).trigger('change');
+	jQuery('#fwrite').find('[name="menu_model"],[name="menu_layout"]').children('option').eq(0).prop('selected',true).trigger('change');
 	jQuery('#fwrite').find('[name="grade[]"]').prop('checked',true);
 }
 
@@ -105,6 +105,7 @@ function clickMenuUpdate (site_menu_id) {
 				document.fwrite.menu_href.value = response.data.href;
 				
 				jQuery('#fwrite').find('[name="menu_target"] > option[value="'+response.data.target+'"]').prop('selected',true);
+				jQuery('#fwrite').find('[name="menu_layout"] > option[value="'+response.data.layout+'"]').prop('selected',true);
 				
 				jQuery.each(response.data.grade,function(key,value){
 					jQuery('#fwrite').find('[name="grade[]"][value="'+value+'"]').prop('checked',true);

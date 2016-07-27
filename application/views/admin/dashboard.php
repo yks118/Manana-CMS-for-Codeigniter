@@ -33,4 +33,33 @@
 		</ul>
 	</div>
 	<?php } ?>
+	
+	<div class="row">
+		<div class="col-lg-6">
+			<div class="panel panel-default">
+				<div class="panel-heading"><?php echo lang('analytics_visitors'); ?></div>
+				<div class="panel-body">
+					<div id="visitorChart" class="barChart"></div>
+				</div>
+			</div>
+		</div>
+	</div>
 </section>
+
+<script type="text/javascript" charset="UTF-8">
+var lastWeek = [];
+var nowWeek = [];
+
+<?php
+$i = 0;
+foreach ($visitor as $key => $row) {
+	if ($i < 7) {
+		echo 'lastWeek.push(["'.$week[$i].'",'.($row['new'] + $row['returning']).']);';
+	} else {
+		echo 'nowWeek.push(["'.$week[($i - 7)].'",'.($row['new'] + $row['returning']).']);';
+	}
+	
+	$i++;
+}
+?>
+</script>
