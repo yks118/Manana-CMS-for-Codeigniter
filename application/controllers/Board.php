@@ -84,7 +84,7 @@ class Board extends CI_Controller {
 	 * DB insert
 	 */
 	public function writeForm () {
-		$data = $result = array();
+		$blank = $data = $result = array();
 		
 		$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
 		$result = $this->board->write_data($data);
@@ -93,11 +93,13 @@ class Board extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$result['insert_id']).'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$result['insert_id']).'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -141,7 +143,7 @@ class Board extends CI_Controller {
 	 * DB update
 	 */
 	public function updateForm () {
-		$data = $result = array();
+		$blank = $data = $result = array();
 		
 		$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
 		$result = $this->board->update_data($data,$data['board_id'],$data['language']);
@@ -150,18 +152,20 @@ class Board extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$data['board_id']).'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$data['board_id']).'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
 	 * delete
 	 */
 	public function delete ($id) {
-		$result = array();
+		$blank = $result = array();
 		
 		$result = $this->board->delete_data($id);
 		
@@ -169,11 +173,13 @@ class Board extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -225,7 +231,7 @@ class Board extends CI_Controller {
 	 */
 	public function admin_writeConfigForm () {
 		$insert_id = 0;
-		$config_data = $model_auth_data = $order_by = $result = array();
+		$blank = $config_data = $model_auth_data = $order_by = $result = array();
 		
 		$config_data = delete_prefix($this->model->post_data('config_','config_id'),'config_');
 		$model_auth_data = delete_prefix($this->model->post_data('model_auth_','model_auth_id'),'model_auth_');
@@ -248,11 +254,13 @@ class Board extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/admin/board/updateConfig/'.$insert_id.'/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/board/updateConfig/'.$insert_id.'/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -287,7 +295,7 @@ class Board extends CI_Controller {
 	 */
 	public function admin_updateConfigForm () {
 		$id = 0;
-		$config_data = $model_auth_data = $order_by = $result = $data = array();
+		$blank = $config_data = $model_auth_data = $order_by = $result = $data = array();
 		
 		$id = $this->input->post('config_board_config_id');
 		$config_data = delete_prefix($this->model->post_data('config_','config_id'),'config_');
@@ -312,11 +320,13 @@ class Board extends CI_Controller {
 			// success
 			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/admin/board/updateConfig/'.$id.'/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/board/updateConfig/'.$id.'/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -326,7 +336,7 @@ class Board extends CI_Controller {
 	 */
 	public function admin_deleteConfigAjax () {
 		$config_id = $this->input->post('id');
-		$result = array();
+		$blank = $result = array();
 		
 		// delete ci_model_auth
 		$result = $this->model->delete_model_auth('board',$config_id,$this->model->site['site_id']);
@@ -336,6 +346,7 @@ class Board extends CI_Controller {
 			$result = $this->board->delete_config($config_id);
 		}
 		
-		echo json_encode($result);
+		$blank['data']['json'] = $result;
+		$this->load->view('blank',$blank);
 	}
 }

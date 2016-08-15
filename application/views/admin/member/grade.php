@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="gradeMemberAdmin" class="admin">
 	<ul class="list-inline">
 		<?php foreach ($list as $row) { ?>

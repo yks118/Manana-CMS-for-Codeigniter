@@ -63,7 +63,7 @@ class Page extends CI_Controller {
 	 * page DB write
 	 */
 	public function admin_writeForm () {
-		$result = $data = $file_ids = $file_data = array();
+		$blank = $result = $data = $file_ids = $file_data = array();
 		
 		$data = delete_prefix($this->model->post_data('page_','page_id'),'page_');
 		$file_ids = explode('|',$this->input->post('file_ids'));
@@ -88,11 +88,13 @@ class Page extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/admin/page/update/'.$result['insert_id'].'/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/page/update/'.$result['insert_id'].'/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -119,7 +121,7 @@ class Page extends CI_Controller {
 	public function admin_updateForm () {
 		$id = 0;
 		$language = '';
-		$result = $data = $page_data = array();
+		$blank = $result = $data = $page_data = array();
 		
 		$id = $this->input->post('page_id');
 		$language = $this->input->post('language');
@@ -132,11 +134,13 @@ class Page extends CI_Controller {
 			// success
 			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/admin/page/update/'.$id.'/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/page/update/'.$id.'/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -146,7 +150,7 @@ class Page extends CI_Controller {
 	 */
 	public function admin_deleteAjax () {
 		$id = 0;
-		$result = $file_data = $file_id_data = array();
+		$blank = $result = $file_data = $file_id_data = array();
 		
 		$id = $this->input->post('id');
 		$file_data = $this->file->read_model('page',$id);
@@ -161,6 +165,7 @@ class Page extends CI_Controller {
 		
 		$result = $this->page->delete($id);
 		
-		echo json_encode($result);
+		$blank['data']['json'] = $result;
+		$this->load->view('blank',$blank);
 	}
 }

@@ -87,28 +87,26 @@ class manana_hook {
 		$data = array();
 		$output = $this->CI->output->get_output();
 		
-		// json check
-		$json = json_decode('"'.$output.'"');
-		if (json_last_error() === JSON_ERROR_NONE) {
-			// json
-		} else {
-			// html
-			$this->CI->model->html['site_lang'] = $this->site_lang;
-			
-			if (isset($this->CI->member->data['id'])) {
-				$data['loginForm'] = $this->CI->load->view('member/'.$this->CI->member->skin.'/loginInfo',$data,TRUE);
-			} else {
-				$data['loginForm'] = $this->CI->load->view('member/'.$this->CI->member->skin.'/loginForm',$data,TRUE);
-			}
-			
-			if (empty($this->CI->model->layout)) {
-				$this->CI->model->html['layout'] = $output;
-			} else {
-				$data['page'] = $output;
-				$this->CI->model->html['layout'] = $this->CI->load->view('layout/'.$this->CI->model->layout.'/layout',$data,TRUE);
-			}
-			
-			$output = $this->CI->load->view('html',$this->CI->model->html,TRUE);
+		switch ($this->CI->model->type) {
+			case 'html' :
+			case 'js' :
+					$this->CI->model->html['site_lang'] = $this->site_lang;
+					
+					if (isset($this->CI->member->data['id'])) {
+						$data['loginForm'] = $this->CI->load->view('member/'.$this->CI->member->skin.'/loginInfo',$data,TRUE);
+					} else {
+						$data['loginForm'] = $this->CI->load->view('member/'.$this->CI->member->skin.'/loginForm',$data,TRUE);
+					}
+					
+					if (empty($this->CI->model->layout)) {
+						$this->CI->model->html['layout'] = $output;
+					} else {
+						$data['page'] = $output;
+						$this->CI->model->html['layout'] = $this->CI->load->view('layout/'.$this->CI->model->layout.'/layout',$data,TRUE);
+					}
+					
+					$output = $this->CI->load->view('html',$this->CI->model->html,TRUE);
+				break;
 		}
 		
 		$OUT->_display($output);

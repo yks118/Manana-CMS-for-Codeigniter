@@ -44,6 +44,8 @@ class Install extends CI_Controller {
 	 * @param	array	$_POST
 	 */
 	public function writeMember () {
+		$blank = $data = $result = array();
+		
 		if (!$this->db->table_exists('member')) {
 			// member DB install
 			$this->member->install();
@@ -56,11 +58,13 @@ class Install extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/install/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/install/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -71,6 +75,8 @@ class Install extends CI_Controller {
 	 * @param	array	$_POST
 	 */
 	public function writeSite () {
+		$blank = $data = $result = array();
+		
 		if (!$this->db->table_exists('site')) {
 			// site DB install
 			$this->model->install();
@@ -88,10 +94,12 @@ class Install extends CI_Controller {
 			// success
 			set_cookie('noti',$result['message'],0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/install/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/install/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 }

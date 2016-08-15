@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="listBasic" class="board">
 	<ul class="list-unstyled list-table list-table-hover">
 		<li class="container-fluid">

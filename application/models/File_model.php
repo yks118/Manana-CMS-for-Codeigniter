@@ -168,23 +168,50 @@ class File_model extends CI_Model {
 	 * 
 	 * @param	string		$model
 	 * @param	numberic	$model_id
+	 * @param	array		$config
 	 */
-	public function upload ($model,$model_id = 0) {
+	public function upload ($model,$model_id = 0,$config = array()) {
 		$path = '';
-		$result = $config = $data = array();
+		$result = $data = array();
 		
 		$result['status'] = TRUE;
 		
 		// config setting
-		$config['upload_path'] = $this->upload_folder.'/'.$model.'/';
-		$config['allowed_types'] = '*';
-		$config['overwrite'] = FALSE;
-		$config['max_size'] = 10 * 1024;	// MB
-		$config['max_width'] = 0;
-		$config['max_height'] = 0;
-		$config['max_filename'] = 255;
-		$config['encrypt_name'] = TRUE;
-		$config['remove_spaces'] = TRUE;
+		if (!isset($config['upload_path'])) {
+			$config['upload_path'] = $this->upload_folder.'/'.$model.'/';
+		}
+		
+		if (!isset($config['allowed_types'])) {
+			$config['allowed_types'] = '*';
+		}
+		
+		if (!isset($config['overwrite'])) {
+			$config['overwrite'] = FALSE;
+		}
+		
+		if (!isset($config['max_size'])) {
+			$config['max_size'] = 10 * 1024;	// MB
+		}
+		
+		if (!isset($config['max_width'])) {
+			$config['max_width'] = 0;
+		}
+		
+		if (!isset($config['max_height'])) {
+			$config['max_height'] = 0;
+		}
+		
+		if (!isset($config['max_filename'])) {
+			$config['max_filename'] = 255;
+		}
+		
+		if (!isset($config['encrypt_name'])) {
+			$config['encrypt_name'] = TRUE;
+		}
+		
+		if (!isset($config['remove_spaces'])) {
+			$config['remove_spaces'] = TRUE;
+		}
 		
 		$this->load->library('upload',$config);
 		

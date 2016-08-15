@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="siteInstall" class="install">
 	<div class="container mt30">
 		<div class="panel panel-default">

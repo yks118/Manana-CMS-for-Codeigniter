@@ -10,6 +10,7 @@ class Model extends CI_Model {
 	public $layout = '';
 	public $menu = array();
 	public $now_menu = array();
+	public $type = 'html';
 	public $color = array('#f44336','#03a9f4','#8bc34a','#ffeb3b','#009688','#4661ee','#ec5657','#1bcdd1','#8faabb','#b08beb','#3ea0dd','#f5a52a','#23bfaa','#faa586','#eb8cc6');
 	
 	public function __construct () {
@@ -120,17 +121,25 @@ class Model extends CI_Model {
 	 * @param	numberic	$menu_id	ci_site_menu_auth.site_menu_id
 	 */
 	private function _read_menu_auth ($menu_id) {
-		$list = $result = array();
+		$cache = $list = $result = array();
 		
-		$this->db->select('*');
-		$this->db->from('site_menu_auth');
-		$this->db->where('site_menu_id',$menu_id);
-		$this->db->where('status','t');
-		$this->db->order_by('id','ASC');
-		$result = $this->db->get()->result_array();
+		$cache = $this->read_cache('menu_auth_'.$menu_id);
 		
-		foreach ($result as $row) {
-			$list[] = $row['site_member_grade_id'];
+		if (empty($cache)) {
+			$this->db->select('*');
+			$this->db->from('site_menu_auth');
+			$this->db->where('site_menu_id',$menu_id);
+			$this->db->where('status','t');
+			$this->db->order_by('id','ASC');
+			$result = $this->db->get()->result_array();
+			
+			foreach ($result as $row) {
+				$list[] = $row['site_member_grade_id'];
+			}
+			
+			$this->write_cache('menu_auth_'.$menu_id,$list);
+		} else {
+			$list = $cache;
 		}
 		
 		return $list;
@@ -664,6 +673,17 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * read_cache
+	 * 
+	 * cache를 읽어옴. 모든 cache에 통일성을 주기 위해 함수를 추가..
+	 * 
+	 * @param	string		$id
+	 */
+	public function read_cache ($id) {
+		return $this->cache->file->get($id);
+	}
+	
+	/**
 	 * write_data
 	 * 
 	 * site 생성
@@ -853,6 +873,29 @@ class Model extends CI_Model {
 			$result['status'] = FALSE;
 			$result['message'] = $this->db->_error_message();
 			$result['number'] = $this->db->_error_number();
+		}
+		
+		return $result;
+	}
+	
+	/**
+	 * write_cache
+	 * 
+	 * cache를 생성 및 업데이트 합니다.
+	 * 
+	 * @param	string			$id
+	 * @param	array|string	$data
+	 * @param	numberic		$ttl		second
+	 */
+	public function write_cache ($id,$data,$ttl = 60) {
+		$result = array();
+		
+		if ($this->cache->file->save($id,$data,$ttl)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_write_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = lang('system_write_danger');
 		}
 		
 		return $result;
@@ -1074,6 +1117,27 @@ class Model extends CI_Model {
 	}
 	
 	/**
+	 * delete_cache
+	 * 
+	 * cache 삭제
+	 * 
+	 * @param	string		$id
+	 */
+	public function delete_cache ($id) {
+		$result = array();
+		
+		if ($this->cache->file->delete($id)) {
+			$result['status'] = TRUE;
+			$result['message'] = lang('system_delete_success');
+		} else {
+			$result['status'] = FALSE;
+			$result['message'] = lang('system_delete_danger');
+		}
+		
+		return $result;
+	}
+	
+	/**
 	 * install
 	 * 
 	 * site DB 설치
@@ -1150,6 +1214,11 @@ class Model extends CI_Model {
 					'default_language'=>array(
 						'type'=>'VARCHAR',
 						'constraint'=>255
+					),
+					'default_layout'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>255,
+						'default'=>'basic'
 					)
 				);
 				$this->dbforge->add_field($fields);

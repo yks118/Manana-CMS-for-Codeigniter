@@ -14,7 +14,7 @@ class File extends CI_Controller {
 	public function upload () {
 		$model_id = 0;
 		$model = $action = '';
-		$result = array();
+		$blank = $result = array();
 		
 		$model = $this->input->post('model');
 		$model_id = $this->input->post('model_id');
@@ -31,15 +31,17 @@ class File extends CI_Controller {
 				// success
 				set_cookie('noti',$result['message'],0);
 				set_cookie('noti_type','success',0);
-				echo js('parent.document.location.href = parent.document.location.href;');
+				$blank['data']['js'] = 'parent.document.location.href = parent.document.location.href;';
 			} else {
-				echo js('parent.'.$action.'('.$result['data']['id'].',"'.$result['data']['name'].'","'.$result['data']['path'].'",'.$result['data']['size'].',"'.$result['data']['is_image'].'");');
-				echo notify($result['message'],'success',TRUE);
+				$blank['data']['js'] = 'parent.'.$action.'('.$result['data']['id'].',"'.$result['data']['name'].'","'.$result['data']['path'].'",'.$result['data']['size'].',"'.$result['data']['is_image'].'");';
+				$blank['data']['js'] .= 'parent.notify("'.$result['message'].'","success")';
 			}
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -51,7 +53,7 @@ class File extends CI_Controller {
 		// load download helper
 		$this->load->helper('download');
 		
-		$data = array();
+		$blank = $data = array();
 		
 		$data = $this->file->read_id($id);
 		
@@ -60,7 +62,8 @@ class File extends CI_Controller {
 			force_download($data['name'],$data['data']);
 		} else {
 			// error
-			echo notify(lang('system_download_danger_empty'),'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.lang('system_download_danger_empty').'","danger");';
+			$this->load->view('blank',$blank);
 		}
 	}
 	
@@ -71,12 +74,13 @@ class File extends CI_Controller {
 	 */
 	public function deleteAjax () {
 		$id = 0;
-		$result = array();
+		$blank = $result = array();
 		
 		$id = $this->input->post('id');
 		$result = $this->file->delete($id);
 		
-		echo json_encode($result);
+		$blank['data']['json'] = $result;
+		$this->load->view('blank',$blank);
 	}
 	
 	/**

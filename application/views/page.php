@@ -1,1 +1,4 @@
-<?php echo $document; ?>
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+echo $document; ?>

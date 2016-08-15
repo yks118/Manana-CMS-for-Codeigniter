@@ -82,7 +82,7 @@ class Admin extends CI_Controller {
 	 */
 	public function updateSiteForm () {
 		$id = 0;
-		$result = $data = $languages = $site_data = array();
+		$blank = $result = $data = $languages = $site_data = array();
 		
 		$id = $this->input->post('site_id');
 		$data = delete_prefix($this->model->post_data('site_','site_id'),'site_');
@@ -97,11 +97,13 @@ class Admin extends CI_Controller {
 			// success
 			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/admin/site/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/site/').'";';
 		} else {
 			// error
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -137,7 +139,7 @@ class Admin extends CI_Controller {
 	 * 메뉴 업데이트
 	 */
 	public function updateMenuForm () {
-		$result = $data = $menu_data = $grade_data = array();
+		$blank = $result = $data = $menu_data = $grade_data = array();
 		
 		$data = delete_prefix($this->model->post_data('menu_','menu_id'),'menu_');
 		$grade_data = $this->input->post('grade');
@@ -151,10 +153,12 @@ class Admin extends CI_Controller {
 			// success
 			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/admin/menu/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/menu/').'";';
 		} else {
-			echo notify($result['message'],'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -165,7 +169,7 @@ class Admin extends CI_Controller {
 	public function readMenuModelIdAjax () {
 		$limit = 999;
 		$model = '';
-		$response = array();
+		$blank = $response = array();
 		
 		$model = $this->input->post('model');
 		
@@ -189,7 +193,8 @@ class Admin extends CI_Controller {
 			$response['message'] = lang('system_not_data');
 		}
 		
-		echo json_encode($response);
+		$blank['data']['json'] = $response;
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -199,7 +204,7 @@ class Admin extends CI_Controller {
 	 */
 	public function updateMenuIndexAjax () {
 		$language = '';
-		$response = $node = array();
+		$blank = $response = $node = array();
 		
 		$language = $this->input->post('language');
 		$node = $this->input->post('node');
@@ -214,7 +219,8 @@ class Admin extends CI_Controller {
 			}
 		}
 		
-		echo json_encode($response);
+		$blank['data']['json'] = $response;
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -224,7 +230,7 @@ class Admin extends CI_Controller {
 	 */
 	public function readMenuId () {
 		$id = 0;
-		$response = array();
+		$blank = $response = array();
 		
 		$id = $this->input->post('id');
 		
@@ -242,7 +248,8 @@ class Admin extends CI_Controller {
 			}
 		}
 		
-		echo json_encode($response);
+		$blank['data']['json'] = $response;
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -252,7 +259,7 @@ class Admin extends CI_Controller {
 	 */
 	public function updateMenuHomeAjax () {
 		$id = 0;
-		$response = array();
+		$blank = $response = array();
 		
 		$id = $this->input->post('id');
 		
@@ -263,7 +270,8 @@ class Admin extends CI_Controller {
 		// update
 		$response = $this->model->update_menu(array('is_main'=>'t'),$id);
 		
-		echo json_encode($response);
+		$blank['data']['json'] = $response;
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -347,6 +355,8 @@ class Admin extends CI_Controller {
 	 * @param	string		$model		model name
 	 */
 	public function install ($model) {
+		$blank = array();
+		
 		if ($model != 'model') {
 			// model load
 			$this->load->model(array($model.'_model'=>$model));
@@ -359,10 +369,12 @@ class Admin extends CI_Controller {
 			// success
 			set_cookie('noti',lang('admin_module_install_success'),0);
 			set_cookie('noti_type','success',0);
-			echo js('parent.document.location.href = "'.base_url('/admin/dashboard/').'";');
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/dashboard/').'";';
 		} else {
 			// error
-			echo notify(lang('admin_module_install_error'),'danger',TRUE);
+			$blank['data']['js'] = 'parent.notify("'.lang('admin_module_install_error').'","danger");';
 		}
+		
+		$this->load->view('blank',$blank);
 	}
 }

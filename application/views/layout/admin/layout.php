@@ -1,4 +1,6 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
 // set css
 $this->model->css($path.'/css/admin.layout.less');
 

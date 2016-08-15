@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="writePageAdmin" class="admin">
 	<?php
 	$attributes = array('name'=>'fwrite','id'=>'fwrite','target'=>'hIframe');

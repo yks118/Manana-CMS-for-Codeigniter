@@ -203,6 +203,9 @@ class Member_model extends CI_Model {
 		// get member grade
 		$data['grade'] = $this->_read_grade($data['id'],$site_id);
 		
+		// get profile photo
+		$data['profile_photo'] = $this->file->read_model('member_profile_photo',$data['id']);
+		
 		return $data;
 	}
 	
@@ -364,6 +367,100 @@ class Member_model extends CI_Model {
 		$total = $this->db->count_all_results('member_grade');
 		
 		return $total;
+	}
+	
+	/**
+	 * read_login_log_total
+	 * 
+	 * ci_login_log
+	 * 
+	 * @param	numberic	$id			ci_member_id
+	 * @param	array		$keyword
+	 */
+	public function read_login_log_total ($id,$keyword = array()) {
+		$total = 0;
+		$keywords = array();
+		
+		if (is_array($keyword)) {
+			$keywords = $keyword;
+		} else {
+			$keywords[] = $keyword;
+		}
+		
+		foreach ($keywords as $ip) {
+			if ($ip) {
+				$this->db->where('ip',$ip);
+			}
+		}
+		
+		$this->db->where('member_id',$id);
+		$total = $this->db->count_all_results('login_log');
+		
+		return $total;
+	}
+	
+	/**
+	 * read_login_log_list
+	 * 
+	 * ci_login_log
+	 * 
+	 * @param	array	$data
+	 */
+	public function read_login_log_list ($data = array()) {
+		$list = $result = $keywords = array();
+		
+		if (!isset($data['member_id'])) {
+			$data['member_id'] = $this->data['id'];
+		}
+		
+		if (!isset($data['limit'])) {
+			$data['limit'] = 20;
+		}
+		
+		if (!isset($data['offset'])) {
+			$data['offset'] = 0;
+		}
+		
+		if (!isset($data['total'])) {
+			$data['total'] = $this->read_login_log_total($data['member_id']);
+		}
+		
+		if (is_array($data['keyword'])) {
+			$keywords = $data['keyword'];
+		} else {
+			$keywords[] = $data['keyword'];
+		}
+		
+		// get list
+		$this->db->select('*');
+		$this->db->from('login_log');
+		$this->db->where('member_id',$data['member_id']);
+		
+		foreach ($keywords as $ip) {
+			if ($ip) {
+				$this->db->where('ip',$ip);
+			}
+		}
+		
+		$this->db->order_by('write_datetime','DESC');
+		
+		if (isset($data['limit'])) {
+			$this->db->limit($data['limit']);
+		}
+		
+		if (isset($data['offset'])) {
+			$this->db->offset($data['offset']);
+		}
+		
+		$result = $this->db->get()->result_array();
+		
+		foreach ($result as $key => $row) {
+			$row['number'] = $data['total'] - $key;
+			
+			$list[] = $row;
+		}
+		
+		return $list;
 	}
 	
 	/**
@@ -652,24 +749,54 @@ class Member_model extends CI_Model {
 	 * ci_member 업데이트
 	 * 
 	 * @param	array		$data
-	 * @param	numberic	$id			ci_member.id
+	 * @param	numberic	$id					ci_member.id
+	 * @param	string		$now_password		ci_member.password
 	 */
-	public function update_data ($data,$id) {
-		$result = array();
+	public function update_data ($data,$id,$now_password = '') {
+		$result = $member_data = array();
 		
 		// encode password
 		if (isset($data['password'])) {
-			$data['password'] = $this->_encode($data['password']);
+			if (empty($data['password'])) {
+				unset($data['password']);
+			} else {
+				$data['password'] = $this->_encode($data['password']);
+			}
 		}
 		
-		$this->db->where('id',$id);
-		if ($this->db->update('member',$data)) {
-			$result['status'] = TRUE;
-			$result['message'] = lang('system_update_success');
+		if (!isset($data['update_datetime'])) {
+			$data['update_datetime'] = date('Y-m-d H:i:s');
+		}
+		
+		if (empty($now_password) && $this->check_admin()) {
+			// admin
+			$this->db->where('id',$id);
+			if ($this->db->update('member',$data)) {
+				$result['status'] = TRUE;
+				$result['message'] = lang('system_update_success');
+			} else {
+				$result['status'] = FALSE;
+				$result['message'] = $this->db->_error_message();
+				$result['number'] = $this->db->_error_number();
+			}
 		} else {
-			$result['status'] = FALSE;
-			$result['message'] = $this->db->_error_message();
-			$result['number'] = $this->db->_error_number();
+			// member
+			$member_data = $this->read_data('id',$id);
+			
+			if ($now_password == $this->_decode($member_data['password'])) {
+				$this->db->where('id',$id);
+				if ($this->db->update('member',$data)) {
+					$result['status'] = TRUE;
+					$result['message'] = lang('system_update_success');
+				} else {
+					$result['status'] = FALSE;
+					$result['message'] = $this->db->_error_message();
+					$result['number'] = $this->db->_error_number();
+				}
+			} else {
+				$result['status'] = FALSE;
+				$result['message'] = lang('member_inconsistency_password');
+			}
 		}
 		
 		return $result;

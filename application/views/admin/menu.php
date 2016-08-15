@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="menuAdmin" class="admin">
 	<div class="row">
 		<div class="col-sm-6">

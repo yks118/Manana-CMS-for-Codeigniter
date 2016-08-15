@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="listConfigBoardAdmin" class="admin">
 	<p>Total : <?php echo number_format($total); ?> / <?php echo number_format($total_config); ?></p>
 	

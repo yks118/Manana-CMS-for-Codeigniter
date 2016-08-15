@@ -1,4 +1,7 @@
-<?php echo doctype('html5'); ?>
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+echo doctype('html5'); ?>
 <html lang="<?php echo $site_lang; ?>">
 	<head>
 		<!-- META -->
@@ -31,12 +34,12 @@
 		
 		<!-- css -->
 		<?php foreach ($this->model->css as $row) { ?>
-		<link type="text/css" rel="<?php echo $row['type']; ?>" href="<?php echo $row['path']; ?>" />
+		<link type="text/css" rel="<?php echo $row['type']; ?>" href="<?php echo file_time($row['path']); ?>" />
 		<?php } ?>
 		
 		<!-- javascript -->
 		<?php foreach ($this->model->js['header'] as $path) { ?>
-		<script type="text/javascript" charset="UTF-8" src="<?php echo $path; ?>"></script>
+		<script type="text/javascript" charset="UTF-8" src="<?php echo file_time($path); ?>"></script>
 		<?php } ?>
 		
 		<!-- Default Setting -->
@@ -68,12 +71,7 @@
 		
 		<!-- javascript -->
 		<?php foreach ($this->model->js['footer'] as $path) { ?>
-		<script type="text/javascript" charset="UTF-8" src="<?php echo $path; ?>"></script>
+		<script type="text/javascript" charset="UTF-8" src="<?php echo file_time($path); ?>"></script>
 		<?php } ?>
-		
-		<!-- Placeholder for IE9 -->
-		<!--[if IE 9 ]>
-			<script src="vendors/bower_components/jquery-placeholder/jquery.placeholder.min.js"></script>
-		<![endif]-->
 	</body>
 </html>

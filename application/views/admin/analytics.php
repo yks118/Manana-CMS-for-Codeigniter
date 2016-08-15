@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="analyticsAdmin" class="admin">
 	<div class="panel panel-default">
 		<div class="panel-heading"><?php echo lang('text_search'); ?></div>

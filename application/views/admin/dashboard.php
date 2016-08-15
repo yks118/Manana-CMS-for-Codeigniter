@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="dashboardAdmin" class="admin">
 	<?php if (isset($model_check[0])) { ?>
 	<div class="well">

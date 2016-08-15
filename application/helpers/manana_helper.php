@@ -26,23 +26,6 @@ function js ($text) {
 }
 
 /**
- * notify
- * 
- * js 알림을 셋팅
- * 
- * @param	string		$message		메세지
- * @param	string		$type			success / warning / danger
- * @param	string		$parent			true / false
- */
-function notify ($message,$type = 'success',$parent = TRUE) {
-	if ($parent) {
-		return js('parent.notify("'.$message.'","'.$type.'");');
-	} else {
-		return js('notify("'.$message.'","'.$type.'");');
-	}
-}
-
-/**
  * read_folder_list
  * 
  * 폴더안의 폴더 리스트를 리턴
@@ -232,4 +215,45 @@ function html_path ($path) {
 	$html_path = base_url(substr($path,1));
 	
 	return $html_path;
+}
+
+/**
+ * check_local_file
+ * 
+ * local file check
+ * 
+ * @param	string		$path
+ * @return	string		$path / false
+ */
+function check_local_file ($path) {
+	$result = FALSE;
+	
+	$filename = str_replace(array(base_url('/'),'/assets/views/'),array('./','/application/views/'),$path);
+	$pos = strpos($filename,'./');
+	
+	if ($pos !== FALSE && $pos == 0) {
+		$result = $filename;
+	}
+	
+	return $result;
+}
+
+/**
+ * file_time
+ * 
+ * local file check & add file last update time
+ * 
+ * @param	string		$path
+ */
+function file_time ($path) {
+	$filename = check_local_file($path);
+	
+	if ($filename) {
+		if (is_file($filename)) {
+			$path = str_replace(array('http:','https:'),'',$path);
+			$path .= '?var='.filemtime($filename);
+		}
+	}
+	
+	return $path;
 }

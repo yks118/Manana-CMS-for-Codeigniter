@@ -1,3 +1,7 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+?>
+
 <section id="listMemberAdmin" class="admin">
 	<p>Total : <?php echo number_format($total); ?></p>
 	
