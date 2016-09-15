@@ -10,7 +10,7 @@ class Admin extends CI_Controller {
 			set_cookie('noti',lang('member_login_required'),0);
 			set_cookie('noti_type','danger',0);
 			redirect('/member/login/');
-		} else if (!$this->member->check_admin()) {
+		} else if (!$this->member->is_admin) {
 			// admin 권한이 없다면, 팅겨냄..
 			set_cookie('noti',lang('system_auth_danger'),0);
 			set_cookie('noti_type','danger',0);
@@ -39,10 +39,10 @@ class Admin extends CI_Controller {
 		$data = $analytics_data = array();
 		
 		// set JS
-		$this->model->js($this->model->path.'/js/flot/jquery.flot.min.js','footer');
-		$this->model->js($this->model->path.'/js/flot/jquery.flot.resize.js','footer');
-		$this->model->js($this->model->path.'/js/flot/jquery.flot.categories.min.js','footer');
-		$this->model->js($this->model->path.'/js/flot.tooltip/jquery.flot.tooltip.min.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot/jquery.flot.min.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot/jquery.flot.resize.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot/jquery.flot.categories.min.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot.tooltip/jquery.flot.tooltip.min.js','footer');
 		$this->model->js($this->model->path.'/js/dashboard.admin.js','footer');
 		
 		$data = $this->model->analytics_visitor(date('Y-m-d',strtotime('-'.number_format(7 + date('w')).'day')),date('Y-m-d',strtotime('+'.number_format(6 - date('w')).'day')));
@@ -302,10 +302,10 @@ class Admin extends CI_Controller {
 		$this->load->library('google_api');
 		
 		// set JS
-		$this->model->js($this->model->path.'/js/flot/jquery.flot.min.js','footer');
-		$this->model->js($this->model->path.'/js/flot/jquery.flot.resize.js','footer');
-		$this->model->js($this->model->path.'/js/flot/jquery.flot.pie.min.js','footer');
-		$this->model->js($this->model->path.'/js/flot.tooltip/jquery.flot.tooltip.min.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot/jquery.flot.min.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot/jquery.flot.resize.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot/jquery.flot.pie.min.js','footer');
+		$this->model->js($this->model->path.'/plugin/flot.tooltip/jquery.flot.tooltip.min.js','footer');
 		$this->model->js($this->model->path.'/js/analytics.admin.js','footer');
 		
 		switch ($data['report']) {

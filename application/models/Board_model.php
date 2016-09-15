@@ -2,18 +2,35 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Board_model extends CI_Model {
+	private $encrypt_key = '';
+	
+	public $is_admin = FALSE;
 	public $menu = array();
 	public $auth = array();
+	public $auth_id = array();
 	
 	public function __construct () {
 		parent::__construct();
 		
+		$this->load->language('board');
+		
 		if ($this->uri->segment(1) == 'admin') {
+			// load common board js
+			$this->model->js($this->model->path.'/views/admin/board/js/board.js');
+			
 			$this->menu['board']['name'] = lang('admin_menu_board');
 			$this->menu['board']['href'] = base_url('/admin/board/config');
 			$this->menu['board']['target'] = '_self';
 		} else if (isset($this->model->now_menu['model']) && $this->model->now_menu['model'] == 'board') {
+			// load common board js
+			$this->model->js($this->model->path.'/js/board.js');
+			
+			if ($this->member->is_admin) {
+				$this->is_admin = TRUE;
+			}
+			
 			$id = ($this->uri->segment(3))?$this->uri->segment(3):$this->uri->segment(2);
+			$this->auth_id = ($this->session->userdata('board_auth_id'))?$this->session->userdata('board_auth_id'):array();
 			$this->auth = $this->_auth($this->model->now_menu['model_id'],$id);
 		}
 	}
@@ -42,13 +59,68 @@ class Board_model extends CI_Model {
 		if ($id) {
 			$document_data = $this->read_id($id);
 			
-			if ($document_data['member_id'] == $member_id) {
-				$data['update'] = TRUE;
-				$data['delete'] = TRUE;
+			if (isset($document_data['member_id'])) {
+				if (
+					($document_data['member_id'] && $document_data['member_id'] == $member_id) ||
+					(in_array($id,$this->auth_id))
+				) {
+					// 자기자신의 글이거나, 이미 비밀번호를 한번 쳐서 맞춘 글이라면..
+					$data['update'] = TRUE;
+					$data['delete'] = TRUE;
+				} else {
+					$data['update'] = FALSE;
+					$data['delete'] = FALSE;
+				}
+			} else {
+				$data['update'] = FALSE;
+				$data['delete'] = FALSE;
 			}
 		}
 		
+		if ($this->is_admin) {
+			// 운영자 혹은 게시판 관리자라면..
+			foreach ($data as $key => $value) {
+				// 모든 권한을 줌..
+				$data[$key] = TRUE;
+			}
+		}
+		
+		// list는 컨트롤러에서 index가 대신함..
+		$data['index'] = $data['list'];
+		
 		return $data;
+	}
+	
+	/**
+	 * _encode
+	 * 
+	 * 비밀번호 암호화
+	 * 
+	 * @param	string		$password
+	 * @param	string		$key
+	 */
+	private function _encode ($password,$key = '') {
+		if (empty($key)) {
+			$key = $this->encrypt_key;
+		}
+		
+		return $this->encrypt->encode($password,$key);
+	}
+	
+	/**
+	 * _decode
+	 * 
+	 * 비밀번호 복호화
+	 * 
+	 * @param	string		$password
+	 * @param	string		$key
+	 */
+	private function _decode ($password,$key = '') {
+		if (empty($key)) {
+			$key = $this->encrypt_key;
+		}
+		
+		return $this->encrypt->decode($password,$key);
 	}
 	
 	/**
@@ -88,6 +160,49 @@ class Board_model extends CI_Model {
 			$this->db->set('board_id',$board_id);
 			$this->db->insert('board_reader');
 		}
+	}
+	
+	/**
+	 * check_secret
+	 * 
+	 * 비밀글인지 체크
+	 * 
+	 * @param	array	$data
+	 */
+	public function check_secret ($data) {
+		$flag = TRUE;
+		
+		if ($this->is_admin) {
+			// 운영자나 게시판 관리자면 패스..
+			$flag = FALSE;
+		} else if ($data['is_secret'] != 't') {
+			// 비밀글이 아니면 패스..
+			$flag = FALSE;
+		} else if (isset($this->member->data['id']) && $data['member_id'] && $data['member_id'] == $this->member->data['id']) {
+			// 로그인 유저인데, 자기자신이 쓴 글이라면 패스..
+			$flag = FALSE;
+		} else if (!isset($this->member->data['id']) && in_array($data['board_id'],$this->auth_id)) {
+			// 비로그인 유저인데, 비밀번호를 입력한 경우라면 패스..
+			$flag = FALSE;
+		}
+		
+		return $flag;
+	}
+	
+	/**
+	 * check_password
+	 * 
+	 * @param	string		$password
+	 * @param	string		$db_password
+	 */
+	public function check_password ($password,$db_password) {
+		$flag = FALSE;
+		
+		if ($password == $this->_decode($db_password)) {
+			$flag = TRUE;
+		}
+		
+		return $flag;
 	}
 	
 	/**
@@ -172,7 +287,13 @@ class Board_model extends CI_Model {
 		
 		if (isset($data['member_id']) && !isset($data['name'])) {
 			$data['name'] = $result['member_name'];
+			
+			$data['member'] = $this->member->read_data('id',$data['member_id']);
 		}
+		
+		// ci_file
+		$data['files'] = array();
+		$data['files'] = $this->file->read_model('board',$id);
 		
 		return $data;
 	}
@@ -215,48 +336,46 @@ class Board_model extends CI_Model {
 	 * 게시판의 게시글 리스트를 리턴
 	 * 
 	 * @param	numberic	$config_id		ci_board_config.board_config_id
-	 * @param	numberic	$total			board total
-	 * @param	numberic	$limit			limit
-	 * @param	numberic	$page
-	 * @param	numberic	$site_id		ci_board_config.site_id
-	 * @param	string		$language
-	 * @param	array		$field
-	 * @param	array		$keyword
+	 * @param	array		$data
 	 */
-	public function read_list ($config_id,$total = 0,$limit = 20,$page = 0,$language = '',$field = array(),$keyword = array()) {
+	public function read_list ($config_id,$data) {
 		$offset = 0;
 		$list = $result = $tmp = $fields = $keywords = array();
 		
-		if (empty($page)) {
-			$page = 1;
+		if (!isset($data['page'])) {
+			$data['page'] = 1;
 		}
 		
-		if (empty($total)) {
-			$total = $this->read_total($config_id);
+		if (!isset($data['total'])) {
+			$data['total'] = $this->read_total($config_id);
 		}
 		
-		if (empty($language)) {
-			$language = $this->config->item('language');
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
 		}
 		
-		if (is_array($field)) {
-			$fields = $field;
-		} else {
-			$fields[] = $field;
+		if (isset($data['field'])) {
+			if (is_array($data['field'])) {
+				$fields = $data['field'];
+			} else {
+				$fields[] = $data['field'];
+			}
 		}
 		
-		if (is_array($keyword)) {
-			$keywords = $keyword;
-		} else {
-			$keywords[] = $keyword;
+		if (isset($data['keyword'])) {
+			if (is_array($data['keyword'])) {
+				$keywords = $data['keyword'];
+			} else {
+				$keywords[] = $data['keyword'];
+			}
 		}
 		
-		$offset = ($page - 1) * $limit;
+		$offset = ($data['page'] - 1) * $data['limit'];
 		
 		// get DB
 		$this->db->select(write_prefix_db($this->db->list_fields('board'),array('b','bj')).', m.name AS member_name, COUNT(*) AS hit');
 		$this->db->from('board b');
-		$this->db->join('board bj','b.board_config_id = bj.board_config_id AND bj.language = "'.$language.'"','LEFT');
+		$this->db->join('board bj','b.board_id = bj.board_id AND bj.language = "'.$data['language'].'"','LEFT');
 		$this->db->join('member m','b.member_id = m.id','LEFT');
 		$this->db->join('board_reader mr','b.board_id = mr.board_id','LEFT');
 		
@@ -275,9 +394,10 @@ class Board_model extends CI_Model {
 		}
 		
 		$this->db->group_by('b.board_id');
+		$this->db->order_by('b.is_notice','DESC');
 		$this->db->order_by('b.id','DESC');
 		$this->db->offset($offset);
-		$this->db->limit($limit);
+		$this->db->limit($data['limit']);
 		$result = $this->db->get()->result_array();
 		
 		foreach ($result as $key => $row) {
@@ -286,7 +406,7 @@ class Board_model extends CI_Model {
 			$tmp['hit'] = $row['hit'];
 			
 			$row = read_prefix_db($row,'bj');
-			$row['number'] = $total - $key;
+			$row['number'] = $data['total'] - $key;
 			$row['hit'] = $tmp['hit'];
 			
 			if (isset($tmp['name'])) {
@@ -414,6 +534,10 @@ class Board_model extends CI_Model {
 			$result['insert_id'] = $this->db->insert_id();
 			
 			if (!isset($data['board_id']) || empty($data['board_id'])) {
+				if (!isset($data['parent_id']) || empty($data['parent_id'])) {
+					$this->db->set('parent_id',$result['insert_id']);
+				}
+				
 				$this->db->set('board_id',$result['insert_id']);
 				$this->db->where('id',$result['insert_id']);
 				$this->db->update('board');
@@ -671,6 +795,16 @@ class Board_model extends CI_Model {
 						'type'=>'VARCHAR',
 						'constraint'=>255,
 						'null'=>TRUE
+					),
+					'is_notice'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1,
+						'default'=>'f'
+					),
+					'is_secret'=>array(
+						'type'=>'VARCHAR',
+						'constraint'=>1,
+						'default'=>'f'
 					),
 					'write_datetime'=>array(
 						'type'=>'DATETIME',

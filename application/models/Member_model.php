@@ -7,6 +7,8 @@ class Member_model extends CI_Model {
 	public $data = array();
 	public $skin = 'basic';
 	public $menu = array();
+	public $is_admin = FALSE;
+	public $is_guest = TRUE;
 	
 	public function __construct() {
 		parent::__construct();
@@ -16,7 +18,9 @@ class Member_model extends CI_Model {
 		
 		// set member data
 		if ($this->session->userdata('member_id')) {
+			$this->is_guest = FALSE;
 			$this->data = $this->read_data('id',$this->session->userdata('member_id'));
+			$this->is_admin = $this->check_admin();
 		}
 		
 		if ($this->uri->segment(1) == 'admin') {
@@ -422,7 +426,7 @@ class Member_model extends CI_Model {
 		}
 		
 		if (!isset($data['total'])) {
-			$data['total'] = $this->read_login_log_total($data['member_id']);
+			$data['total'] = $this->read_login_log_total($data['member_id'],$data['keyword']);
 		}
 		
 		if (is_array($data['keyword'])) {
@@ -580,7 +584,7 @@ class Member_model extends CI_Model {
 	 * @param	numberic	$site_id	ci_site.id
 	 * @param	string		$language
 	 */
-	function write_information ($data,$id,$site_id = 0,$language = '') {
+	public function write_information ($data,$id,$site_id = 0,$language = '') {
 		$result = array();
 		
 		if (!isset($data['member_id'])) {
@@ -768,7 +772,7 @@ class Member_model extends CI_Model {
 			$data['update_datetime'] = date('Y-m-d H:i:s');
 		}
 		
-		if (empty($now_password) && $this->check_admin()) {
+		if (empty($now_password) && $this->is_admin) {
 			// admin
 			$this->db->where('id',$id);
 			if ($this->db->update('member',$data)) {

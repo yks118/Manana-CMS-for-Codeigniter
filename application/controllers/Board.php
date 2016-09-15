@@ -8,36 +8,54 @@ class Board extends CI_Controller {
 		parent::__construct();
 		
 		$this->load->model(array('board_model'=>'board'));
-		$this->load->language('board');
-		
-		// load common board js
-		$this->model->js($this->model->path.'/views/admin/board/js/board.js');
 		
 		if (isset($this->model->now_menu['name'])) {
-			if (!(in_array(0,$this->model->now_menu['grade']) && !isset($this->member->data['id']))) {
-				$auth_check = FALSE;
-				foreach ($this->model->now_menu['grade'] as $grade_id) {
-					if (isset($this->member->data['grade'][$grade_id])) {
-						$auth_check = TRUE;
-						break;
+			$auth_check = FALSE;
+			
+			// menu auth
+			if (isset($this->member->data['id'])) {
+				// login
+				
+				if ($this->board->is_admin) {
+					// 운영자나 게시판 관리자는 통과..
+					$auth_check = TRUE;
+				} else {
+					// 일반 회원..
+					foreach ($this->model->now_menu['grade'] as $grade_id) {
+						if (isset($this->member->data['grade'][$grade_id])) {
+							$auth_check = TRUE;
+							break;
+						}
 					}
 				}
-				
-				if (
-					$auth_check == FALSE ||
-					(
-						(isset($this->board->auth[$this->router->method]) && !$this->board->auth[$this->router->method]) ||
-						(isset($this->board->auth[$this->router->method.'Form']) && !$this->board->auth[$this->router->method.'Form'])
-					)
-				) {
-					set_cookie('noti',lang('system_auth_danger'),0);
-					set_cookie('noti_type','danger',0);
-					redirect('/');
+			} else {
+				// guest
+				if (in_array(0,$this->model->now_menu['grade'])) {
+					$auth_check = TRUE;
 				}
+			}
+			
+			// board auth
+			if (
+				$auth_check == FALSE ||
+				(
+					(isset($this->board->auth[$this->router->method]) && !$this->board->auth[$this->router->method]) ||
+					(isset($this->board->auth[$this->router->method.'Form']) && !$this->board->auth[$this->router->method.'Form']) ||
+					(isset($this->board->auth[$this->router->method.'Ajax']) && !$this->board->auth[$this->router->method.'Ajax'])
+				)
+			) {
+				set_cookie('noti',lang('system_auth_danger'),0);
+				set_cookie('noti_type','danger',0);
+				redirect('/');
 			}
 			
 			$this->model->html['site_title'] = $this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
 			$this->board_config = $this->board->read_config_id($this->model->now_menu['model_id']);
+		} else if ($this->uri->segment(1) != 'admin') {
+			// 사이트맵에 존재하지 않는 메뉴라면..
+			set_cookie('noti',lang('system_connect_danger'),0);
+			set_cookie('noti_type','danger',0);
+			redirect('/');
 		}
 	}
 	
@@ -47,19 +65,17 @@ class Board extends CI_Controller {
 	 * board list
 	 */
 	public function index () {
-		$language = '';
-		$limit = $page = 0;
 		$data = array();
 		
-		$limit = $this->board_config['limit'];
-		$page = ($this->input->get('page'))?$this->input->get('page'):1;
-		$language = $this->config->item('language');
+		$data['limit'] = $this->board_config['limit'];
+		$data['page'] = ($this->input->get('page'))?$this->input->get('page'):1;
+		$data['language'] = $this->config->item('language');
 		
 		$data['field'] = $this->input->get('field');
 		$data['keyword'] = $this->input->get('keyword');
 		$data['total'] = $this->board->read_total($this->board_config['board_config_id']);
-		$data['list'] = $this->board->read_list($this->model->now_menu['model_id'],$data['total'],$limit,$page,$language,$data['field'],$data['keyword']);
-		$data['pagination'] = $this->model->pagination($data['total'],$limit);
+		$data['list'] = $this->board->read_list($this->model->now_menu['model_id'],$data);
+		$data['pagination'] = $this->model->pagination($data['total'],$data['limit']);
 		
 		$this->load->view('board/'.$this->board_config['skin'].'/list',$data);
 	}
@@ -86,17 +102,23 @@ class Board extends CI_Controller {
 	public function writeForm () {
 		$blank = $data = $result = array();
 		
-		$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
-		$result = $this->board->write_data($data);
-		
-		if ($result['status']) {
-			// success
-			set_cookie('noti',$result['message'],0);
-			set_cookie('noti_type','success',0);
-			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$result['insert_id']).'";';
+		if ($this->input->method() == 'post') {
+			$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
+			$result = $this->board->write_data($data);
+			
+			if ($result['status']) {
+				// success
+				set_cookie('noti',$result['message'],0);
+				set_cookie('noti_type','success',0);
+				$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$result['insert_id']).'";';
+			} else {
+				// error
+				$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
+			}
 		} else {
-			// error
-			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
+			set_cookie('noti',lang('system_connect_danger'),0);
+			set_cookie('noti_type','danger',0);
+			$blank['js'] = 'document.location.href = "'.base_url('/').'";';
 		}
 		
 		$this->load->view('blank',$blank);
@@ -145,38 +167,124 @@ class Board extends CI_Controller {
 	public function updateForm () {
 		$blank = $data = $result = array();
 		
-		$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
-		$result = $this->board->update_data($data,$data['board_id'],$data['language']);
-		
-		if ($result['status']) {
-			// success
-			set_cookie('noti',$result['message'],0);
-			set_cookie('noti_type','success',0);
-			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$data['board_id']).'";';
+		if ($this->input->method() == 'post') {
+			$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
+			$result = $this->board->update_data($data,$data['board_id'],$data['language']);
+			
+			if ($result['status']) {
+				// success
+				set_cookie('noti',$result['message'],0);
+				set_cookie('noti_type','success',0);
+				$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/'.$data['board_id']).'";';
+			} else {
+				// error
+				$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
+			}
 		} else {
-			// error
-			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
+			set_cookie('noti',lang('system_connect_danger'),0);
+			set_cookie('noti_type','danger',0);
+			$blank['js'] = 'document.location.href = "'.base_url('/').'";';
 		}
 		
 		$this->load->view('blank',$blank);
 	}
 	
 	/**
-	 * delete
+	 * deleteForm
+	 * 
+	 * @param	numberic	$id		board.board_id
 	 */
-	public function delete ($id) {
+	public function deleteForm ($id) {
 		$blank = $result = array();
 		
-		$result = $this->board->delete_data($id);
-		
-		if ($result['status']) {
-			// success
-			set_cookie('noti',$result['message'],0);
-			set_cookie('noti_type','success',0);
-			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/').'";';
+		if ($this->input->method() == 'post') {
+			$result = $this->board->delete_data($id);
+			
+			if ($result['status']) {
+				// success
+				set_cookie('noti',$result['message'],0);
+				set_cookie('noti_type','success',0);
+				$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/'.$this->model->now_menu['uri'].'/').'";';
+			} else {
+				// error
+				$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
+			}
 		} else {
-			// error
-			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
+			set_cookie('noti',lang('system_connect_danger'),0);
+			set_cookie('noti_type','danger',0);
+			$blank['js'] = 'document.location.href = "'.base_url('/').'";';
+		}
+		
+		$this->load->view('blank',$blank);
+	}
+	
+	/**
+	 * deleteAjax
+	 * 
+	 * @param	numberic	$id		board.board_id
+	 */
+	public function deleteAjax ($id) {
+		$blank = $response = array();
+		
+		if ($this->input->method() == 'post') {
+			$response = $this->board->delete_data($id);
+			$blank['json'] = $response;
+		} else {
+			set_cookie('noti',lang('system_connect_danger'),0);
+			set_cookie('noti_type','danger',0);
+			$blank['js'] = 'document.location.href = "'.base_url('/').'";';
+		}
+		
+		$this->load->view('blank',$blank);
+	}
+	
+	/**
+	 * password
+	 * 
+	 * 비밀번호 확인
+	 * 
+	 * @param	numberic	$id			board.board_id
+	 * @param	string		$action		update / delete
+	 */
+	public function password ($id,$action = '') {
+		$data = array();
+		
+		$data['action'] = $action;
+		$data['data'] = $this->board->read_id($id);
+		
+		$this->load->view('board/'.$this->board_config['skin'].'/password',$data);
+	}
+	
+	/**
+	 * checkPasswordForm
+	 * 
+	 * 비밀번호 확인
+	 */
+	public function checkPasswordForm () {
+		$action = $uri = '';
+		$blank = $data = $document_data = $session = array();
+		
+		$data = delete_prefix($this->model->post_data('board_','board_id'),'board_');
+		$action = $this->input->post('action');
+		
+		$document_data = $this->board->read_id($data['board_id']);
+		if ($this->board->check_password($data['password'],$document_data['password'])) {
+			if (empty($action)) {
+				// view
+				$uri = base_url('/'.$this->model->now_menu['uri'].'/'.$data['board_id'].'/');
+			} else {
+				$uri = base_url('/'.$this->model->now_menu['uri'].'/'.$action.'/'.$data['board_id'].'/');
+			}
+			
+			// set session
+			if (!in_array($data['board_id'],$this->board->auth_id)) {
+				$this->board->auth_id[] = $data['board_id'];
+				$this->session->set_userdata('board_auth_id',$this->board->auth_id);
+			}
+			
+			$blank['data']['js'] = 'parent.document.location.href = "'.$uri.'";';
+		} else {
+			$blank['data']['js'] = 'parent.notify("'.lang('member_miss_match_password').'","danger");';
 		}
 		
 		$this->load->view('blank',$blank);

@@ -10,7 +10,8 @@ jQuery(function(){
 				barWidth:0.08,
 				order:1,
 				lineWidth:0,
-				fillColor:'#f44336'
+				fillColor:'#f44336',
+				align:'right'
 			}
 		});
 		
@@ -22,7 +23,8 @@ jQuery(function(){
 				barWidth:0.08,
 				order:2,
 				lineWidth:0,
-				fillColor:'#03a9f4'
+				fillColor:'#03a9f4',
+				align:'left'
 			}
 		});
 		

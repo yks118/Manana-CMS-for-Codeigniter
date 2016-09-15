@@ -13,12 +13,13 @@ class File extends CI_Controller {
 	 */
 	public function upload () {
 		$model_id = 0;
-		$model = $action = '';
+		$model = $action = $editor_id = '';
 		$blank = $result = array();
 		
 		$model = $this->input->post('model');
 		$model_id = $this->input->post('model_id');
 		$action = $this->input->post('action');
+		$editor_id = $this->input->post('editor_id');
 		
 		if (empty($action)) {
 			$action = 'file_upload';
@@ -33,7 +34,7 @@ class File extends CI_Controller {
 				set_cookie('noti_type','success',0);
 				$blank['data']['js'] = 'parent.document.location.href = parent.document.location.href;';
 			} else {
-				$blank['data']['js'] = 'parent.'.$action.'('.$result['data']['id'].',"'.$result['data']['name'].'","'.$result['data']['path'].'",'.$result['data']['size'].',"'.$result['data']['is_image'].'");';
+				$blank['data']['js'] = 'parent.'.$action.'("'.$editor_id.'",'.$result['data']['id'].',"'.$result['data']['name'].'","'.$result['data']['path'].'",'.$result['data']['size'].',"'.$result['data']['is_image'].'");';
 				$blank['data']['js'] .= 'parent.notify("'.$result['message'].'","success")';
 			}
 		} else {

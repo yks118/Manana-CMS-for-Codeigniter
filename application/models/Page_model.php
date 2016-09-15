@@ -2,16 +2,53 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Page_model extends CI_Model {
+	public $is_admin = FALSE;
+	public $skin = 'basic';
 	public $menu = array();
+	public $auth = array();
 	
 	public function __construct() {
 		parent::__construct();
 		
 		if ($this->uri->segment(1) == 'admin') {
+			// load common page js
+			$this->model->js($this->model->path.'/views/admin/page/js/page.js');
+			
 			$this->menu['page']['name'] = lang('admin_menu_page');
 			$this->menu['page']['href'] = base_url('/admin/page/');
 			$this->menu['page']['target'] = '_self';
+		} else if (isset($this->model->now_menu['model']) && $this->model->now_menu['model'] == 'page') {
+			if ($this->member->is_admin) {
+				$this->is_admin = TRUE;
+			}
+			
+			$this->auth = $this->_auth($this->model->now_menu['model_id']);
 		}
+	}
+	
+	/**
+	 * _auth
+	 * 
+	 * 페이지의 권한 설정..
+	 * 
+	 * @param	numberic	$id		page.page_id
+	 */
+	private function _auth ($id) {
+		$data = array();
+		
+		$data['view'] = TRUE;
+		$data['update'] = FALSE;
+		
+		if ($this->is_admin) {
+			foreach ($data as $key => $value) {
+				$data[$key] = TRUE;
+			}
+		}
+		
+		// 페이지는 index가 view
+		$data['index'] = $data['view'];
+		
+		return $data;
 	}
 	
 	/**
@@ -19,29 +56,32 @@ class Page_model extends CI_Model {
 	 * 
 	 * 사이트에 등록된 페이지의 총 수
 	 * 
-	 * @param	numberic	$site_id	ci_site.id
-	 * @param	array		$field
-	 * @param	array		$keyword
+	 * @param	array		$data
 	 */
-	public function read_total ($site_id = 0,$field = array(),$keyword = array()) {
+	public function read_total ($data) {
 		$total = 0;
 		$fields = $keywords = array();
 		
-		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = $this->model->site['site_id'];
 		}
 		
-		if (is_array($field)) {
-			$fields = $field;
-		} else {
-			$fields[] = $field;
+		if (isset($data['field'])) {
+			if (is_array($data['field'])) {
+				$fields = $data['field'];
+			} else {
+				$fields[] = $data['field'];
+			}
 		}
 		
-		if (is_array($keyword)) {
-			$keywords = $keyword;
-		} else {
-			$keywords[] = $keyword;
+		if (isset($data['keyword'])) {
+			if (is_array($data['keyword'])) {
+				$keywords = $data['keyword'];
+			} else {
+				$keywords[] = $data['keyword'];
+			}
 		}
+		
 		
 		foreach ($fields as $key => $value) {
 			if (isset($fields[$key])) {
@@ -49,7 +89,7 @@ class Page_model extends CI_Model {
 			}
 		}
 		
-		$this->db->where('site_id',$site_id);
+		$this->db->where('site_id',$data['site_id']);
 		$this->db->group_by('page_id');
 		$total = $this->db->get('page')->num_rows();
 		
@@ -61,69 +101,69 @@ class Page_model extends CI_Model {
 	 * 
 	 * ci_page의 리스트를 리턴
 	 * 
-	 * @param	numberic	$total
-	 * @param	numberic	$limit
-	 * @param	numberic	$page
-	 * @param	numberic	$site_id		ci_site.id
-	 * @param	string		$language
-	 * @param	array		$field
-	 * @param	array		$keyword
+	 * @param	array		$data
 	 */
-	public function read_list ($total = 0,$limit = 20,$page = 1,$site_id = 0,$language = '',$field = array(),$keyword = array()) {
+	public function read_list ($data) {
 		$offset = 0;
 		$query = '';
 		$list = $result = $fields = $keywords = array();
 		
-		if (empty($total)) {
-			$total = $this->read_total($site_id,$field,$keyword);
+		if (!isset($data['page'])) {
+			$data['page'] = 1;
 		}
 		
-		if (empty($page)) {
-			$page = 1;
+		if (!isset($data['site_id'])) {
+			$data['site_id'] = $this->model->site['site_id'];
 		}
 		
-		if (empty($site_id)) {
-			$site_id = $this->model->site['site_id'];
+		if (!isset($data['limit'])) {
+			$data['limit'] = 20;
 		}
 		
-		if (empty($language)) {
-			$language = $this->config->item('language');
+		if (!isset($data['language'])) {
+			$data['language'] = $this->config->item('language');
 		}
 		
-		if (is_array($field)) {
-			$fields = $field;
-		} else {
-			$fields[] = $field;
-		}
-		
-		if (is_array($keyword)) {
-			$keywords = $keyword;
-		} else {
-			$keywords[] = $keyword;
-		}
-		
-		$offset = ($page - 1) * $limit;
-		
-		$this->db->select(write_prefix_db($this->db->list_fields('page'),array('p','pj')));
-		$this->db->from('page p');
-		$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$language.'"','LEFT');
-		
-		foreach ($fields as $key => $value) {
-			if (isset($fields[$key])) {
-				$this->db->like('pj.'.$fields[$key],$keywords[$key],'both');
+		if (isset($data['field'])) {
+			if (is_array($data['field'])) {
+				$fields = $data['field'];
+			} else {
+				$fields[] = $data['field'];
 			}
 		}
 		
-		$this->db->where('p.site_id',$site_id);
+		if (isset($data['keyword'])) {
+			if (is_array($data['keyword'])) {
+				$keywords = $data['keyword'];
+			} else {
+				$keywords[] = $data['keyword'];
+			}
+		}
+		
+		if (!isset($data['total'])) {
+			$data['total'] = $this->read_total($data['site_id'],$fields,$keywords);
+		}
+		
+		$offset = ($data['page'] - 1) * $data['limit'];
+		
+		$this->db->select(write_prefix_db($this->db->list_fields('page'),array('p','pj')));
+		$this->db->from('page p');
+		$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$data['language'].'"','LEFT');
+		
+		foreach ($fields as $key => $value) {
+			$this->db->like('pj.'.$fields[$key],$keywords[$key],'both');
+		}
+		
+		$this->db->where('p.site_id',$data['site_id']);
 		$this->db->group_by('p.page_id');
 		$this->db->order_by('p.page_id','DESC');
 		$this->db->offset($offset);
-		$this->db->limit($limit);
+		$this->db->limit($data['limit']);
 		$result = $this->db->get()->result_array();
 		
 		foreach ($result as $key => $row) {
 			$row = read_prefix_db($row,'pj');
-			$row['number'] = $total - ($limit * ($page - 1)) - $key;
+			$row['number'] = $data['total'] - ($data['limit'] * ($data['page'] - 1)) - $key;
 			
 			$list[] = $row;
 		}
@@ -141,7 +181,7 @@ class Page_model extends CI_Model {
 	 * @param	string		$language
 	 */
 	public function read_id ($id,$site_id = 0,$language = '') {
-		$data = array();
+		$data = $cache = array();
 		
 		if (empty($site_id)) {
 			$site_id = $this->model->site['site_id'];
@@ -151,17 +191,25 @@ class Page_model extends CI_Model {
 			$language = $this->config->item('language');
 		}
 		
-		// ci_page
-		$this->db->select(write_prefix_db($this->db->list_fields('page'),array('p','pj')));
-		$this->db->from('page p');
-		$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$language.'"','LEFT');
-		$this->db->where('p.page_id',$id);
-		$this->db->where('p.site_id',$site_id);
-		$data = read_prefix_db($this->db->get()->row_array(),'pj');
+		$cache = $this->model->read_cache('read_page_id_'.$id.'_'.$language);
 		
-		// ci_file
-		$data['files'] = array();
-		$data['files'] = $this->file->read_model('page',$id);
+		if (empty($cache)) {
+			// ci_page
+			$this->db->select(write_prefix_db($this->db->list_fields('page'),array('p','pj')));
+			$this->db->from('page p');
+			$this->db->join('page pj','p.page_id = pj.page_id AND pj.language = "'.$language.'"','LEFT');
+			$this->db->where('p.page_id',$id);
+			$this->db->where('p.site_id',$site_id);
+			$data = read_prefix_db($this->db->get()->row_array(),'pj');
+			
+			// ci_file
+			$data['files'] = array();
+			$data['files'] = $this->file->read_model('page',$id);
+			
+			$this->model->write_cache('read_page_id_'.$id.'_'.$language,$data);
+		} else {
+			$data = $cache;
+		}
 		
 		return $data;
 	}

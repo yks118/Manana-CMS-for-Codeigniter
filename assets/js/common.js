@@ -37,15 +37,18 @@ function check_minlength (obj) {
  * clickFileUpload
  * 
  * @param	{Object}	f			this.form
+ * @param	{string}	editor_id
  * @param	{string}	model
  * @param	{numberic}	model_id
  * @param	{string}	action		refresh / function
  */
-function clickFileUpload (f,model,model_id,action) {
+function clickFileUpload (f,editor_id,model,model_id,action) {
 	form = f;
 	
 	if (model) {
 		document.forms['ffileupload'].model.value = model;
+	} else {
+		document.forms['ffileupload'].model.value = '';
 	}
 	
 	if (model_id) {
@@ -60,22 +63,27 @@ function clickFileUpload (f,model,model_id,action) {
 		document.forms['ffileupload'].action.value = 'file_upload';
 	}
 	
+	if (editor_id) {
+		document.forms['ffileupload'].editor_id.value = editor_id;
+	} else {
+		document.forms['ffileupload'].editor_id.value = '';
+	}
+	
 	jQuery('#ffileupload').find('[name="file"]').click();
 }
 
 /**
  * file_upload
  * 
+ * @param	{string}	editor_id
  * @param	{numberic}	id
  * @param	{string}	name
  * @param	{string}	path
  * @param	{numberic}	size
  * @param	{numberic}	is_image
  */
-function file_upload (id,name,path,size,is_image) {
-	var html = insert_html = fid = '';
-	
-	fid = jQuery(form).attr('id');
+function file_upload (editor_id,id,name,path,size,is_image) {
+	var html = insert_html = '';
 	
 	if (is_image == "1") {
 		// image
@@ -83,10 +91,10 @@ function file_upload (id,name,path,size,is_image) {
 			html += '<img src="'+site_url+path.substring(1)+'" alt="'+name+'" />';
 			html += '<div class="btn-group btn-group-justified">';
 				html += '<div class="btn-group">';
-					html += '<button class="btn btn-default">Insert</button>';
+					html += '<button type="button" class="btn btn-default" onclick="clickInsertEditorHTML(\''+editor_id+'\','+id+',\''+name+'\',\''+path+'\')">'+name+'</button>';
 				html += '</div>';
 				html += '<div class="btn-group">';
-					html += '<button class="btn btn-danger">Delete</button>';
+					html += '<button type="button" class="btn btn-danger" onclick="clickFileDelete(this.form,'+id+')">Delete</button>';
 				html += '</div>';
 			html += '</div>';
 		html += '</li>';
@@ -96,8 +104,8 @@ function file_upload (id,name,path,size,is_image) {
 		// file
 		html += '<li data-file-id="'+id+'">';
 			html += '<div class="btn-group">';
-				html += '<button class="btn btn-default" onclick="write_editor_html(\''+fid+'\')">'+name+'</button>';
-				html += '<button class="btn btn-danger" onclick="clickFileDelete(this.form,'+id+')">Delete</button>';
+				html += '<button type="button" class="btn btn-default" onclick="clickInsertEditorHTML(\''+editor_id+'\','+id+',\''+name+'\')">'+name+'</button>';
+				html += '<button type="button" class="btn btn-danger" onclick="clickFileDelete(this.form,'+id+')">Delete</button>';
 			html += '</div>';
 		html += '</li>';
 		
@@ -265,9 +273,21 @@ jQuery(function(){
 	
 	// jQuery ajax setup
 	jQuery.ajaxSetup({
+		data:csrf,
 		beforeSend:function(xhr,settings){
-			// setting csrf
-			settings.data = jQuery.param(csrf)+'&'+settings.data;
+			// update csrf
+			var csrf_key = Object.keys(csrf)[0];
+			settings.data = jQuery.map(settings.data.split('&'),function(value){
+				var ret = '';
+				
+				if (value.split('=')[0] == csrf_key) {
+					ret = csrf_key+'='+csrf[csrf_key];
+				} else {
+					ret = value;
+				}
+				
+				return ret;
+			}).join('&');
 		},
 		complete:function(xhr,status){
 			// csrf reset

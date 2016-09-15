@@ -8,20 +8,88 @@ class Page extends CI_Controller {
 		// load model page
 		$this->load->model(array('page_model'=>'page'));
 		
-		// load common page js
-		$this->model->js($this->model->path.'/views/admin/page/js/page.js');
-		
 		if (isset($this->model->now_menu['name'])) {
+			$auth_check = FALSE;
+			
+			// menu auth
+			if (isset($this->member->data['id'])) {
+				if ($this->page->is_admin) {
+					// 운영자나 페이지 관리자는 통과..
+					$auth_check = TRUE;
+				} else {
+					// 일반 회원..
+					foreach ($this->model->now_menu['grade'] as $grade_id) {
+						if (isset($this->member->data['grade'][$grade_id])) {
+							$auth_check = TRUE;
+							break;
+						}
+					}
+				}
+			} else {
+				if (in_array(0,$this->model->now_menu['grade'])) {
+					$auth_check = TRUE;
+				}
+			}
+			
+			// page auth
+			if (
+				$auth_check == FALSE ||
+				(
+					(isset($this->page->auth[$this->router->method]) && !$this->page->auth[$this->router->method]) ||
+					(isset($this->page->auth[$this->router->method.'Form']) && !$this->page->auth[$this->router->method.'Form']) ||
+					(isset($this->page->auth[$this->router->method.'Ajax']) && !$this->page->auth[$this->router->method.'Ajax'])
+				)
+			) {
+				set_cookie('noti',lang('system_auth_danger'),0);
+				set_cookie('noti_type','danger',0);
+				redirect('/');
+			}
+			
 			$this->model->html['site_title'] = $this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
+		} else if ($this->uri->segment(1) != 'admin') {
+			// 사이트맵에 존재하지 않는 메뉴라면..
+			set_cookie('noti',lang('system_connect_danger'),0);
+			set_cookie('noti_type','danger',0);
+			redirect('/');
 		}
 	}
 	
+	/**
+	 * index
+	 * 
+	 * page view
+	 */
 	public function index () {
 		$data = array();
 		
-		$data = $this->page->read_id($this->model->now_menu['model_id']);
+		$data['data'] = $this->page->read_id($this->model->now_menu['model_id']);
 		
-		$this->load->view('page',$data);
+		$this->load->view('page/'.$this->page->skin.'/view',$data);
+	}
+	
+	/**
+	 * updateForm
+	 * 
+	 * page update
+	 */
+	public function updateForm () {
+		$blank = $result = $data = $page_data = array();
+		
+		$data = delete_prefix($this->model->post_data('page_','page_id'),'page_');
+		$page_data = $this->page->read_id($data['page_id'],$this->model->site['site_id'],$data['language']);
+		$result = ($page_data['language'] == $data['language'])?$this->page->update_data($data,$data['page_id']):$this->page->write_data($data);
+		
+		if ($result['status']) {
+			// success
+			set_cookie('noti',lang('system_update_success'),0);
+			set_cookie('noti_type','success',0);
+			$blank['data']['js'] = 'parent.document.location.href = parent.document.location.href';
+		} else {
+			// error
+			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';
+		}
+		
+		$this->load->view('blank',$blank);
 	}
 	
 	/**
@@ -30,16 +98,16 @@ class Page extends CI_Controller {
 	 * page list
 	 */
 	public function admin_index () {
-		$limit = 20;
 		$data = array();
 		
+		$data['limit'] = 20;
 		$data['page'] = $this->input->get('page');
 		$data['field'] = $this->input->get('field');
 		$data['keyword'] = $this->input->get('keyword');
 		$data['site_id'] = $this->model->site['site_id'];
-		$data['total'] = $this->page->read_total($data['site_id'],$data['field'],$data['keyword']);
-		$data['list'] = $this->page->read_list($data['total'],$limit,$data['page'],$data['site_id'],$data['field'],$data['keyword']);
-		$data['pagination'] = $this->model->pagination($data['total'],$limit);
+		$data['total'] = $this->page->read_total($data);
+		$data['list'] = $this->page->read_list($data);
+		$data['pagination'] = $this->model->pagination($data['total'],$data['limit']);
 		
 		$this->load->view('admin/page/list',$data);
 	}
@@ -119,22 +187,17 @@ class Page extends CI_Controller {
 	 * page update
 	 */
 	public function admin_updateForm () {
-		$id = 0;
-		$language = '';
 		$blank = $result = $data = $page_data = array();
 		
-		$id = $this->input->post('page_id');
-		$language = $this->input->post('language');
 		$data = delete_prefix($this->model->post_data('page_','page_id'),'page_');
-		
-		$page_data = $this->page->read_id($id);
-		$result = ($page_data['language'] == $language)?$this->page->update_data($data,$id):$this->page->write_data($data);
+		$page_data = $this->page->read_id($data['page_id'],$this->model->site['site_id'],$data['language']);
+		$result = ($page_data['language'] == $data['language'])?$this->page->update_data($data,$data['page_id']):$this->page->write_data($data);
 		
 		if ($result['status']) {
 			// success
 			set_cookie('noti',lang('system_update_success'),0);
 			set_cookie('noti_type','success',0);
-			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/page/update/'.$id.'/').'";';
+			$blank['data']['js'] = 'parent.document.location.href = "'.base_url('/admin/page/update/'.$data['page_id'].'/').'";';
 		} else {
 			// error
 			$blank['data']['js'] = 'parent.notify("'.$result['message'].'","danger");';

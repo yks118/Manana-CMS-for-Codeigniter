@@ -39,7 +39,7 @@ class manana_hook {
 			redirect('/install/');
 		} else if ($this->CI->uri->segment(1) == 'admin') {
 			// check site admin
-			if ($this->CI->member->check_admin()) {
+			if ($this->CI->member->is_admin) {
 				// set admin layout
 				$this->CI->model->layout = 'admin';
 				

@@ -48,6 +48,7 @@ echo doctype('html5'); ?>
 		var prefix = "<?php echo $this->config->item('cookie_prefix'); ?>";
 		var site_url = "<?php echo (isset($this->model->site['url']))?'//'.$this->model->site['url']:base_url('/'); ?>";
 		var csrf = {'<?php echo $this->security->get_csrf_token_name(); ?>':'<?php echo $this->security->get_csrf_hash(); ?>'};
+		var segment = document.location.pathname.split('/');
 		</script>
 	</head>
 	<body>
@@ -62,6 +63,7 @@ echo doctype('html5'); ?>
 		<input type="hidden" name="model" value="" />
 		<input type="hidden" name="model_id" value="" />
 		<input type="hidden" name="action" value="" />
+		<input type="hidden" name="editor_id" value="" />
 		<input class="hidden" type="file" name="file" />
 		
 		<?php echo form_close(); ?>

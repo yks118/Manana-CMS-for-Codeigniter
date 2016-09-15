@@ -4,10 +4,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 <section id="informationMember" class="member">
 	<div class="text-center mb20">
-		<?php if (isset($this->member->data['profile_photo'][0])) { ?>
-		<img class="profile_photo" src="<?php echo html_path($this->member->data['profile_photo'][0]['path']); ?>" alt="<?php echo $this->member->data['name']; ?>" />
+		<?php if (isset($data['profile_photo'][0])) { ?>
+		<img class="profile_photo" src="<?php echo html_path($data['profile_photo'][0]['path']); ?>" alt="<?php echo $data['name']; ?>" />
 		<?php } else { ?>
-		<img class="profile_photo" src="//placehold.it/120x120" alt="<?php echo $this->member->data['name']; ?>" />
+		<img class="profile_photo" src="holder.js/120x120" alt="<?php echo $data['name']; ?>" />
 		<?php } ?>
 	</div>
 	

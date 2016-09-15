@@ -50,9 +50,10 @@ class Model extends CI_Model {
 		$this->js('//ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js','header');
 		$this->js('//code.jquery.com/ui/1.12.0/jquery-ui.min.js','footer');
 		$this->js('//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js','footer');
-		$this->js($this->path.'/js/bootstrap-notify/bootstrap-notify.js','footer');
-		$this->js($this->path.'/js/autosize/autosize.js','footer');
-		$this->js($this->path.'/js/jquery.cookie.js','footer');
+		$this->js($this->path.'/plugin/bootstrap-notify/bootstrap-notify.js','footer');
+		$this->js($this->path.'/plugin/autosize/autosize.js','footer');
+		$this->js($this->path.'/plugin/jquery.cookie/jquery.cookie.js','footer');
+		$this->js($this->path.'/plugin/holder/holder.min.js','footer');
 		$this->js($this->path.'/js/common.js','footer');
 	}
 	
@@ -435,37 +436,45 @@ class Model extends CI_Model {
 	 */
 	public function read_site_url ($url) {
 		$language = $this->config->item('language');
-		$data = $site_member_grade_row = array();
+		$data = $site_member_grade_row = $cache = array();
 		$url = preg_replace('/(https?:\/\/)([0-9.]+)(\/?)/i','$2',$url);
 		
-		// get DB
-		$this->db->select(write_prefix_db($this->db->list_fields('site'),array('s','sj')));
-		$this->db->from('site s');
-		$this->db->join('site sj','s.site_id = sj.site_id AND sj.language = "'.$language.'"','LEFT');
-		$this->db->like('s.url',$url,'both');
-		$this->db->group_by('s.site_id');
-		$this->db->limit(1);
-		$data = read_prefix_db($this->db->get()->row_array(),'sj');
+		$cache = $this->read_cache('read_site_url_'.$url.'_'.$language);
 		
-		// get site admin member grade id
-		$this->db->select('*');
-		$this->db->from('site_member_grade');
-		$this->db->where('site_id',$data['site_id']);
-		$this->db->order_by('id','ASC');
-		$this->db->limit(1);
-		$site_member_grade_row = $this->db->get()->row_array();
-		
-		$data['admin_grade_id'] = $site_member_grade_row['id'];
-		
-		// get favicon
-		$data['favicon'] = $this->file->read_model('site_favicon',$data['site_id']);
-		
-		if (isset($data['favicon'][0])) {
-			$data['favicon'] = $data['favicon'][0];
+		if (empty($cache)) {
+			// get DB
+			$this->db->select(write_prefix_db($this->db->list_fields('site'),array('s','sj')));
+			$this->db->from('site s');
+			$this->db->join('site sj','s.site_id = sj.site_id AND sj.language = "'.$language.'"','LEFT');
+			$this->db->like('s.url',$url,'both');
+			$this->db->group_by('s.site_id');
+			$this->db->limit(1);
+			$data = read_prefix_db($this->db->get()->row_array(),'sj');
+			
+			// get site admin member grade id
+			$this->db->select('*');
+			$this->db->from('site_member_grade');
+			$this->db->where('site_id',$data['site_id']);
+			$this->db->order_by('id','ASC');
+			$this->db->limit(1);
+			$site_member_grade_row = $this->db->get()->row_array();
+			
+			$data['admin_grade_id'] = $site_member_grade_row['id'];
+			
+			// get favicon
+			$data['favicon'] = $this->file->read_model('site_favicon',$data['site_id']);
+			
+			if (isset($data['favicon'][0])) {
+				$data['favicon'] = $data['favicon'][0];
+			}
+			
+			// get use language
+			$data['use_language'] = $this->read_site_language($data['site_id']);
+			
+			$this->write_cache('read_site_url_'.$url.'_'.$language,$data);
+		} else {
+			$data = $cache;
 		}
-		
-		// get use language
-		$data['use_language'] = $this->read_site_language($data['site_id']);
 		
 		return $data;
 	}
@@ -619,7 +628,7 @@ class Model extends CI_Model {
 	 * @param	string		$language
 	 */
 	public function read_menu_list ($parent_id = 0,$site_id = 0,$language = '') {
-		$list = $result = array();
+		$list = $result = $cache = array();
 		
 		if (empty($site_id)) {
 			$site_id = $this->site['site_id'];
@@ -629,21 +638,29 @@ class Model extends CI_Model {
 			$language = $this->config->item('language');
 		}
 		
-		$this->db->select(write_prefix_db($this->db->list_fields('site_menu'),array('m','mj')));
-		$this->db->from('site_menu m');
-		$this->db->join('site_menu mj','m.site_menu_id = mj.site_menu_id AND mj.language = "'.$language.'"','LEFT');
-		$this->db->where('m.site_id',$site_id);
-		$this->db->where('m.parent_id',$parent_id);
-		$this->db->group_by('m.site_menu_id');
-		$this->db->order_by('m.index','ASC');
-		$result = $this->db->get()->result_array();
+		$cache = $this->read_cache('read_menu_list_'.$site_id.'_'.$parent_id.'_'.$language);
 		
-		foreach ($result as $key => $row) {
-			$row = read_prefix_db($row,'mj');
-			$row['grade'] = $this->_read_menu_auth($row['site_menu_id']);
-			$row['children'] = $this->read_menu_list($row['site_menu_id'],$site_id,$language);
+		if (empty($cache)) {
+			$this->db->select(write_prefix_db($this->db->list_fields('site_menu'),array('m','mj')));
+			$this->db->from('site_menu m');
+			$this->db->join('site_menu mj','m.site_menu_id = mj.site_menu_id AND mj.language = "'.$language.'"','LEFT');
+			$this->db->where('m.site_id',$site_id);
+			$this->db->where('m.parent_id',$parent_id);
+			$this->db->group_by('m.site_menu_id');
+			$this->db->order_by('m.index','ASC');
+			$result = $this->db->get()->result_array();
 			
-			$list[] = $row;
+			foreach ($result as $key => $row) {
+				$row = read_prefix_db($row,'mj');
+				$row['grade'] = $this->_read_menu_auth($row['site_menu_id']);
+				$row['children'] = $this->read_menu_list($row['site_menu_id'],$site_id,$language);
+				
+				$list[] = $row;
+			}
+			
+			$this->write_cache('read_menu_list_'.$site_id.'_'.$parent_id.'_'.$language,$list);
+		} else {
+			$list = $cache;
 		}
 		
 		return $list;
@@ -680,7 +697,7 @@ class Model extends CI_Model {
 	 * @param	string		$id
 	 */
 	public function read_cache ($id) {
-		return $this->cache->file->get($id);
+		return ($this->uri->segment(1) == 'admin')?'':$this->cache->file->get($id);
 	}
 	
 	/**

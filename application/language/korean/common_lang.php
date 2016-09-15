@@ -63,6 +63,10 @@ $lang['text_keyword'] = '검색어';
 $lang['text_date'] = '날자';
 $lang['text_writer'] = '작성자';
 $lang['text_hit'] = '조회수';
+$lang['text_cancel'] = '취소';
+$lang['text_notice'] = '공지사항';
+$lang['text_secret'] = '비밀글';
+$lang['text_write_datetime'] = '작성일';
 
 // site
 $lang['site_name'] = '사이트 이름';
@@ -99,6 +103,7 @@ $lang['member_description'] = '자기소개';
 $lang['member_grade'] = '회원등급';
 $lang['member_last_login'] = '최근 로그인 일시';
 $lang['member_logout'] = '로그아웃';
+$lang['member_miss_match_password'] = '비밀번호가 일치하지 않습니다.';
 
 // admin
 $lang['admin_menu_dashboard'] = '대시보드';

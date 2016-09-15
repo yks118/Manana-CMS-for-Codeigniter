@@ -23,13 +23,35 @@ $this->model->css($path.'/css/basic.board.less');
 	
 	<div class="documentBoard"><?php echo $data['document']; ?></div>
 	
+	<?php if ($data['member_id']) { ?>
+	<div class="panel panel-default">
+		<div class="panel-body">
+			<div class="pull-left mr10">
+				<?php if (isset($data['member']['profile_photo'][0])) { ?>
+				<img class="profile_photo" src="<?php echo html_path($data['member']['profile_photo'][0]['path']); ?>" alt="<?php echo $data['name']; ?>" />
+				<?php } else { ?>
+				<img class="profile_photo" src="holder.js/120x120" alt="<?php echo $data['name']; ?>" />
+				<?php } ?>
+				<div><?php echo $data['member']['name']; ?></div>
+			</div>
+			<div><?php echo $data['member']['description']; ?></div>
+		</div>
+	</div>
+	<?php } ?>
+	
 	<div class="text-right">
 		<a class="btn btn-default" target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/'); ?>"><?php echo lang('text_list'); ?></a>
+		
 		<?php if ($this->board->auth['update']) { ?>
 		<a class="btn btn-primary" target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/update/'.$data['board_id'].'/'); ?>"><?php echo lang('text_update'); ?></a>
+		<?php } else if ($data['password']) { ?>
+		<a class="btn btn-primary" target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/password/'.$row['board_id'].'/update/'); ?>"><?php echo lang('text_update'); ?></a>
 		<?php } ?>
+		
 		<?php if ($this->board->auth['delete']) { ?>
-		<a class="btn btn-danger" target="hIframe" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/delete/'.$data['board_id'].'/'); ?>"><?php echo lang('text_delete'); ?></a>
+		<button type="button" class="btn btn-danger" onclick="clickDelete(<?php echo $data['board_id']; ?>)"><?php echo lang('text_delete'); ?></button>
+		<?php } else if ($data['password']) { ?>
+		<a class="btn btn-primary" target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/password/'.$row['board_id'].'/deleteForm/'); ?>"><?php echo lang('text_update'); ?></a>
 		<?php } ?>
 	</div>
 </section>

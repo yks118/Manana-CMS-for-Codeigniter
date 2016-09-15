@@ -5,6 +5,7 @@ class File_model extends CI_Model {
 	private $upload_folder = './upload';
 	private $folder_permissions = 0755;
 	
+	public $skin = 'basic';
 	public $menu = array();
 	
 	public function __construct() {
@@ -26,7 +27,7 @@ class File_model extends CI_Model {
 	 * @param	numberic	$model_id		ci_file.model_id
 	 */
 	public function read_model ($model,$model_id = 0) {
-		$data = array();
+		$data = $cache = array();
 		
 		$this->db->select('*');
 		$this->db->from('file');
