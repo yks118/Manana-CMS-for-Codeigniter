@@ -42,6 +42,10 @@ $this->model->css($path.'/css/basic.board.less');
 	<div class="text-right">
 		<a class="btn btn-default" target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/'); ?>"><?php echo lang('text_list'); ?></a>
 		
+		<?php if ($this->board->auth['reply']) { ?>
+		<a class="btn btn-primary" target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/reply/'.$data['board_id'].'/'); ?>"><?php echo lang('text_reply'); ?></a>
+		<?php } ?>
+		
 		<?php if ($this->board->auth['update']) { ?>
 		<a class="btn btn-primary" target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/update/'.$data['board_id'].'/'); ?>"><?php echo lang('text_update'); ?></a>
 		<?php } else if ($data['password']) { ?>

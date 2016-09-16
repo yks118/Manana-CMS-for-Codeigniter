@@ -67,6 +67,7 @@ $lang['text_cancel'] = '취소';
 $lang['text_notice'] = '공지사항';
 $lang['text_secret'] = '비밀글';
 $lang['text_write_datetime'] = '작성일';
+$lang['text_reply'] = '답변';
 
 // site
 $lang['site_name'] = '사이트 이름';

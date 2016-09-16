@@ -2,8 +2,6 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Board extends CI_Controller {
-	private $board_config = array();
-	
 	public function __construct () {
 		parent::__construct();
 		
@@ -50,7 +48,6 @@ class Board extends CI_Controller {
 			}
 			
 			$this->model->html['site_title'] = $this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
-			$this->board_config = $this->board->read_config_id($this->model->now_menu['model_id']);
 		} else if ($this->uri->segment(1) != 'admin') {
 			// 사이트맵에 존재하지 않는 메뉴라면..
 			set_cookie('noti',lang('system_connect_danger'),0);
@@ -67,17 +64,17 @@ class Board extends CI_Controller {
 	public function index () {
 		$data = array();
 		
-		$data['limit'] = $this->board_config['limit'];
+		$data['limit'] = $this->board->configure['limit'];
 		$data['page'] = ($this->input->get('page'))?$this->input->get('page'):1;
 		$data['language'] = $this->config->item('language');
 		
 		$data['field'] = $this->input->get('field');
 		$data['keyword'] = $this->input->get('keyword');
-		$data['total'] = $this->board->read_total($this->board_config['board_config_id']);
+		$data['total'] = $this->board->read_total($this->board->configure['board_config_id']);
 		$data['list'] = $this->board->read_list($this->model->now_menu['model_id'],$data);
 		$data['pagination'] = $this->model->pagination($data['total'],$data['limit']);
 		
-		$this->load->view('board/'.$this->board_config['skin'].'/list',$data);
+		$this->load->view('board/'.$this->board->configure['skin'].'/list',$data);
 	}
 	
 	/**
@@ -89,9 +86,9 @@ class Board extends CI_Controller {
 		$data = array();
 		
 		$data['action'] = 'write';
-		$data['data']['board_config_id'] = $this->board_config['board_config_id'];
+		$data['data']['board_config_id'] = $this->board->configure['board_config_id'];
 		
-		$this->load->view('board/'.$this->board_config['skin'].'/write',$data);
+		$this->load->view('board/'.$this->board->configure['skin'].'/write',$data);
 	}
 	
 	/**
@@ -134,13 +131,13 @@ class Board extends CI_Controller {
 	public function view ($id) {
 		$data = array();
 		
-		$data['data'] = $this->board->read_id($id);
-		$this->model->html['site_title'] = $data['data']['title'].' - '.$this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
-		
 		// add reader
 		$this->board->reader($id);
 		
-		$this->load->view('board/'.$this->board_config['skin'].'/view',$data);
+		$data['data'] = $this->board->read_id($id);
+		$this->model->html['site_title'] = $data['data']['title'].' - '.$this->model->now_menu['name'].' :: '.$this->model->html['site_title'];
+		
+		$this->load->view('board/'.$this->board->configure['skin'].'/view',$data);
 	}
 	
 	/**
@@ -156,7 +153,7 @@ class Board extends CI_Controller {
 		$data['action'] = 'update';
 		$data['data'] = $this->board->read_id($id);
 		
-		$this->load->view('board/'.$this->board_config['skin'].'/write',$data);
+		$this->load->view('board/'.$this->board->configure['skin'].'/write',$data);
 	}
 	
 	/**
@@ -252,7 +249,7 @@ class Board extends CI_Controller {
 		$data['action'] = $action;
 		$data['data'] = $this->board->read_id($id);
 		
-		$this->load->view('board/'.$this->board_config['skin'].'/password',$data);
+		$this->load->view('board/'.$this->board->configure['skin'].'/password',$data);
 	}
 	
 	/**
@@ -288,6 +285,21 @@ class Board extends CI_Controller {
 		}
 		
 		$this->load->view('blank',$blank);
+	}
+	
+	public function reply ($id) {
+		$data = $document_data = array();
+		
+		$document_data = $this->board->read_id($id);
+		$data['action'] = 'write';
+		
+		// 데이터 수동 업데이트
+		$data['data']['title'] = '[re] '.$document_data['title'];
+		$data['data']['document'] = '<p></p><p>--------------------------------------------------</p>'.$document_data['document'];
+		$data['data']['board_config_id'] = $document_data['board_config_id'];
+		$data['data']['parent_id'] = $id;
+		
+		$this->load->view('board/'.$this->board->configure['skin'].'/write',$data);
 	}
 	
 	/**

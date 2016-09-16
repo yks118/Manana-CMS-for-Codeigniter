@@ -8,8 +8,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 	echo form_open_multipart(base_url('/'.$this->model->now_menu['uri'].'/'.$action.'Form/'),$attributes);
 	?>
 	
-	<input type="hidden" name="board_board_id" id="board_board_id" value="<?php echo (isset($data['board_id']))?$data['board_id']:''; ?>" />
-	<input type="hidden" name="board_board_config_id" id="board_board_config_id" value="<?php echo (isset($data['board_config_id']))?$data['board_config_id']:''; ?>" />
+	<input type="hidden" name="board_board_id" id="board_board_id" value="<?php echo (isset($data['board_id']))?$data['board_id']:0; ?>" />
+	<input type="hidden" name="board_board_config_id" id="board_board_config_id" value="<?php echo (isset($data['board_config_id']))?$data['board_config_id']:0; ?>" />
+	<input type="hidden" name="board_parent_id" id="board_parent_id" value="<?php echo (isset($data['parent_id']))?$data['parent_id']:0; ?>" />
 	<input type="hidden" name="board_language" id="board_language" value="<?php echo $this->config->item('language'); ?>" />
 	<input type="hidden" name="file_ids" id="file_ids" value="" />
 	

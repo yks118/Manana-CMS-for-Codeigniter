@@ -8,6 +8,7 @@ class Board_model extends CI_Model {
 	public $menu = array();
 	public $auth = array();
 	public $auth_id = array();
+	public $configure = array();
 	
 	public function __construct () {
 		parent::__construct();
@@ -32,6 +33,7 @@ class Board_model extends CI_Model {
 			$id = ($this->uri->segment(3))?$this->uri->segment(3):$this->uri->segment(2);
 			$this->auth_id = ($this->session->userdata('board_auth_id'))?$this->session->userdata('board_auth_id'):array();
 			$this->auth = $this->_auth($this->model->now_menu['model_id'],$id);
+			$this->configure = $this->read_config_id($this->model->now_menu['model_id']);
 		}
 	}
 	
@@ -87,6 +89,11 @@ class Board_model extends CI_Model {
 		
 		// list는 컨트롤러에서 index가 대신함..
 		$data['index'] = $data['list'];
+		
+		if (isset($document_data['id']) && $document_data['board_id'] != $document_data['parent_id']) {
+			// 답변은 1depth만 가능..
+			$data['reply'] = FALSE;
+		}
 		
 		return $data;
 	}
@@ -146,6 +153,7 @@ class Board_model extends CI_Model {
 		
 		$this->db->where('datetime >=',$today.' 00:00:00');
 		$this->db->where('datetime <=',$today.' 23:59:59');
+		$this->db->where('board_id',$board_id);
 		
 		if ($this->db->get('board_reader')->num_rows() == 0) {
 			if (isset($this->member->data['id'])) {
@@ -272,6 +280,10 @@ class Board_model extends CI_Model {
 	public function read_id ($id,$language = '') {
 		$data = $result = $tmp = array();
 		
+		if (empty($language)) {
+			$language = $this->config->item('language');
+		}
+		
 		$this->db->select(write_prefix_db($this->db->list_fields('board'),array('b','bj')).', m.name AS member_name, COUNT(mr.board_id) AS hit');
 		$this->db->from('board b');
 		$this->db->join('board bj','b.board_id = bj.board_id AND bj.language = "'.$language.'"','LEFT');
@@ -290,6 +302,9 @@ class Board_model extends CI_Model {
 			
 			$data['member'] = $this->member->read_data('id',$data['member_id']);
 		}
+		
+		// set hit
+		$data['hit'] = $result['hit'];
 		
 		// ci_file
 		$data['files'] = array();
@@ -395,7 +410,8 @@ class Board_model extends CI_Model {
 		
 		$this->db->group_by('b.board_id');
 		$this->db->order_by('b.is_notice','DESC');
-		$this->db->order_by('b.id','DESC');
+		$this->db->order_by('b.parent_id','DESC');
+		$this->db->order_by('b.board_id','ASC');
 		$this->db->offset($offset);
 		$this->db->limit($data['limit']);
 		$result = $this->db->get()->result_array();

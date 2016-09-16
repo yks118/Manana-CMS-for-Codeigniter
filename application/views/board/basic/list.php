@@ -22,9 +22,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 				<li class="text-center col-sm-1 hidden-xs"><?php echo ($row['is_notice'] == 't')?'notice':$row['number']; ?></li>
 				<li class="col-xs-7 col-sm-7 col-md-6 col-lg-7">
 					<?php if ($this->board->check_secret($row)) { ?>
-					<a target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/password/'.$row['board_id'].'/'); ?>"><?php echo $row['title']; ?></a>
+					<a target="_self" class="<?php echo ($row['board_id'] == $row['parent_id'])?'':'pl15'; ?>" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/password/'.$row['board_id'].'/'); ?>">
+						<?php echo $row['title']; ?>
+					</a>
 					<?php } else { ?>
-					<a target="_self" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/'.$row['board_id'].'/'); ?>"><?php echo $row['title']; ?></a>
+					<a target="_self" class="<?php echo ($row['board_id'] == $row['parent_id'])?'':'pl15'; ?>" href="<?php echo base_url('/'.$this->model->now_menu['uri'].'/'.$row['board_id'].'/'); ?>">
+						<?php echo $row['title']; ?>
+					</a>
 					<?php } ?>
 				</li>
 				<li class="col-xs-3 col-sm-3 col-md-2 col-lg-1 text-center"><?php echo $row['name']; ?></li>
