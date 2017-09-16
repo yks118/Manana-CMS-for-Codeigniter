@@ -148,8 +148,17 @@ class MY_Pagination extends CI_Pagination {
 		// Calculate the start and end numbers. These determine
 		// which number to start and end the digit links with.
 		if ($this->total_num_link) {
-			$start = floor($this->total_rows / $this->total_num_link) * $this->total_num_link + 1;
-			$end = ($this->total_rows > $this->total_num_link)?$start + ($this->total_num_link - 1):$num_pages;
+			$start = 2;
+
+			if ($this->cur_page > $this->total_num_link) {
+				if ($this->cur_page % $this->total_num_link == 0) {
+					$start = ((floor($this->cur_page / $this->total_num_link) - 1) * 10) + 2;
+				} else {
+					$start = (floor($this->cur_page / $this->total_num_link) * 10) + 2;
+				}
+			}
+
+			$end = ($this->total_rows > $this->total_num_link)?$start + $this->total_num_link - 2:$num_pages;
 		} else {
 			$start	= (($this->cur_page - $this->num_links) > 0) ? $this->cur_page - ($this->num_links - 1) : 1;
 			$end	= (($this->cur_page + $this->num_links) < $num_pages) ? $this->cur_page + $this->num_links : $num_pages;
