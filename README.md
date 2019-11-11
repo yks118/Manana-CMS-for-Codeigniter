@@ -8,7 +8,7 @@ But Easy Create Web Service.
 Basic Theme : app/Libraries/Theme/Basic.php
 
 ## Rest API Sample
-URL 1. : {Your Domain}/samples/api.json
+URL 1. : {Your Domain}/samples/api.json  
 URL 2. : {Your Domain}/samples/api.xml
 
 Routes : app/Config/Routes.php  
