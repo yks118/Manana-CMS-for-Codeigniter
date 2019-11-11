@@ -1,0 +1,36 @@
+# ----------------------------------------------------------------------
+# Rewrite engine
+# ----------------------------------------------------------------------
+
+# Turning on the rewrite engine is necessary for the following rules and features.
+# FollowSymLinks must be enabled for this to work.
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+
+	# If you installed CodeIgniter in a subfolder, you will need to
+	# change the following line to match the subfolder you need.
+	# http://httpd.apache.org/docs/current/mod/mod_rewrite.html#rewritebase
+	RewriteBase /
+
+	# Checks to see if the user is attempting to access a valid file,
+    # such as an image or css document, if this isn't true it sends the
+    # request to the front controller, index.php
+	RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    # If we don't have mod_rewrite installed, all 404's
+    # can be sent to index.php, and everything works as normal.
+    ErrorDocument 404 index.php
+</IfModule>
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 1 weeks"
+  ExpiresByType application/javascript "access plus 1 weeks"
+  ExpiresByType text/javascript "access plus 1 weeks"
+  ExpiresByType image/gif "access plus 1 weeks"
+  ExpiresByType image/jpeg "access plus 1 weeks"
+  ExpiresByType image/png "access plus 1 weeks"
+  ExpiresByType image/svg "access plus 1 weeks"
+  ExpiresByType image/x-icon "access plus 1 weeks"
+</IfModule>
