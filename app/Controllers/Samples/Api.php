@@ -31,7 +31,7 @@ class Api extends BaseController
 		}
 		*/
 
-		// set page cache : 1 min
+		// set page cache : 1 seconds
 		// $this->cachePage(1);
 		return $this->_view('', $data);
 	}
