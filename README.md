@@ -22,3 +22,36 @@ Controller : app/Controllers/Samples/Form.php
 Entity : app/Entities/Account.php  
 Model : app/Models/Account.php  
 View : app/Views/basic/samples/form.php
+
+## DB Query Cache Sample
+### Model Full Cache
+```php
+class Account extends BaseModel
+{
+	/**
+	 * @var bool $cache Default false
+	 */
+	protected $cache = true;
+
+	/**
+	 * @var int $cacheTTL Default 60
+	 */
+	protected $cacheTTL = 60;
+
+	/**
+	 * @var string $cachePrefix Default DB_Cache_
+	 */
+	protected $cachePrefix = 'DB_Cache_';
+}
+```  
+
+### Query Select Cache
+```php
+$mAccount = new \App\Models\Account();
+$eAccount = $mAccount
+	// Cache refresh 2nd Parameter true
+	->setCacheTTL(60)
+	// Use find, findAll, findColumn
+	->find(1)
+;
+```

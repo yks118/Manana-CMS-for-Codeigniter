@@ -1,13 +1,11 @@
 <?php namespace App\Models;
 
-use CodeIgniter\Model;
-
 /**
  * Class Account
  *
  * @package App\Models
  */
-class Account extends Model
+class Account extends BaseModel
 {
 	/**
 	 * @var string $table
