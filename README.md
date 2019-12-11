@@ -55,3 +55,73 @@ $eAccount = $mAccount
 	->find(1)
 ;
 ```
+
+## DB Replication
+### Setting Master Group app/Config/Database.php
+```php
+class Database extends \CodeIgniter\Database\Config
+{
+	/**
+	 * The default database connection.
+	 *
+	 * @var array
+	 */
+	public $default = [
+		'DSN'      => '',
+		'hostname' => 'localhost',
+		'username' => '',
+		'password' => '',
+		'database' => '',
+		'DBDriver' => 'MySQLi',
+		'DBPrefix' => '',
+		'pConnect' => false,
+		'DBDebug'  => (ENVIRONMENT !== 'production'),
+		'cacheOn'  => false,
+		'cacheDir' => '',
+		'charset'  => 'utf8',
+		'DBCollat' => 'utf8_general_ci',
+		'swapPre'  => '',
+		'encrypt'  => false,
+		'compress' => false,
+		'strictOn' => false,
+		'failover' => [],
+		'port'     => 3306,
+	];
+
+	/**
+	 * @var array $master Insert or Update or Delete
+	 */
+	public $master = [
+		'DSN'      => '',
+		'hostname' => 'localhost',
+		'username' => '',
+		'password' => '',
+		'database' => '',
+		'DBDriver' => 'MySQLi',
+		'DBPrefix' => '',
+		'pConnect' => false,
+		'DBDebug'  => (ENVIRONMENT !== 'production'),
+		'cacheOn'  => false,
+		'cacheDir' => '',
+		'charset'  => 'utf8',
+		'DBCollat' => 'utf8_general_ci',
+		'swapPre'  => '',
+		'encrypt'  => false,
+		'compress' => false,
+		'strictOn' => false,
+		'failover' => [],
+		'port'     => 3306,
+	];
+}
+```
+
+### Setting replicationGroup app/Models/BaseModel.php
+```php
+class BaseModel extends Model
+{
+	/**
+	 * @var string $replicationGroup
+	 */
+	protected $replicationGroup = 'master';
+}
+```
