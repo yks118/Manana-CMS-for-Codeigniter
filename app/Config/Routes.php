@@ -88,7 +88,7 @@ $routes->group(
 		$routes->match(['get', 'post'], 'form', 'Form::index');
 
 		// api support format
-		$routes->addPlaceholder('format', '\.json|\.xml');
+		$routes->addPlaceholder('format', '\.json|\.xml|\.csv');
 
 		// api
 		$routes->get('api(:format)', 'Api::index');

@@ -9,7 +9,8 @@ Basic Theme : app/Libraries/Theme/Basic.php
 
 ## Rest API Sample
 URL 1. : {Your Domain}/samples/api.json  
-URL 2. : {Your Domain}/samples/api.xml
+URL 2. : {Your Domain}/samples/api.xml  
+URL 3. : {Your Domain}/samples/api.csv
 
 Routes : app/Config/Routes.php  
 Controller : app/Controllers/Samples/Api.php

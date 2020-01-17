@@ -22,6 +22,7 @@ class Format extends BaseConfig
 		'application/json',
 		'application/xml', // machine-readable XML
 		'text/xml', // human-readable XML
+		'text/csv',
 	];
 
 	/*
@@ -38,6 +39,7 @@ class Format extends BaseConfig
 		'application/json' => \CodeIgniter\Format\JSONFormatter::class,
 		'application/xml'  => \CodeIgniter\Format\XMLFormatter::class,
 		'text/xml'         => \CodeIgniter\Format\XMLFormatter::class,
+		'text/csv'          => \App\Format\CSVFormatter::class,
 	];
 
 	//--------------------------------------------------------------------

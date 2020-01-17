@@ -75,12 +75,13 @@ class BaseController extends Controller
 
 		// set response content type
 		$segments = $this->request->uri->getSegments();
-		if (preg_match('/\.(?<format>json|xml)$/', $segments[count($segments) - 1], $matches))
+		if (preg_match('/\.(?<format>json|xml|csv)$/', $segments[count($segments) - 1], $matches))
 		{
 			switch ($matches['format'])
 			{
 				case 'json' : $this->response->setContentType('application/json'); break;
 				case 'xml'  : $this->response->setContentType('application/xml'); break;
+				case 'csv'  : $this->response->setContentType('text/csv'); break;
 			}
 		}
 	}
@@ -108,6 +109,12 @@ class BaseController extends Controller
 			// return xml
 			$config = new \Config\Format();
 			return $config->getFormatter('application/xml')->format($data);
+		}
+		elseif (strpos($contentType, 'text/csv') !== false)
+		{
+			// return csv
+			$config = new \Config\Format();
+			return $config->getFormatter('text/csv')->format($data);
 		}
 
 		// Content-Type: text/html
