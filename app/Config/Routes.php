@@ -74,7 +74,28 @@ $routes->setAutoRoute(false);
 
 // We get a performance increase by specifying the default
 // route since we don't have to scan directories.
-$routes->get('/', 'Home::index');
+$routes->get('/', 'Main::index');
+
+$routes
+	->group(
+		'account',
+		[
+			'namespace' => $routes->getDefaultNamespace() . 'Account'
+		],
+		function(RouteCollection $routes)
+		{
+			$routes->match(['get', 'post'], 'sign-up', 'SignUp::index');
+			$routes->match(['get', 'post'], 'sign-in', 'SignIn::index');
+			$routes->get('sign-out', 'SignOut::index');
+
+			$routes->match(['get', 'post'], 'setting', 'Setting::index');
+			$routes->match(['get', 'post'], 'change-password', 'ChangePassword::index');
+			$routes->match(['get', 'post'], 'leave', 'Leave::index');
+		}
+	)
+;
+
+$routes->get('db-migration', 'DBMigration::index');
 
 // samples
 $routes->group(

@@ -1,4 +1,5 @@
-<?php namespace App\Entities;
+<?php
+namespace App\Entities;
 
 use CodeIgniter\Entity;
 use DateTime;
@@ -10,9 +11,11 @@ use DateTime;
  *
  * @property int $id
  * @property string $username
- * @property DateTime $reg_timestamp
- * @property DateTime $mod_timestamp
- * @property DateTime $del_timestamp
+ * @property string $name
+ * @property DateTime $last_login_at
+ * @property DateTime $created_at
+ * @property DateTime $updated_at
+ * @property DateTime $deleted_at
  */
 class Account extends Entity
 {
@@ -20,12 +23,14 @@ class Account extends Entity
 	 * @var array $casts
 	 */
 	protected $casts = [
-		'id'                            => 'int',
-		'username'                      => 'string',
-		'password'                      => 'string',
-		'reg_timestamp'                 => 'datetime',
-		'mod_timestamp'                 => 'datetime',
-		'del_timestamp'                 => 'datetime'
+		'id'            => '?int',
+		'username'      => '?string',
+		'password'      => '?string',
+		'name'          => '?string',
+		'last_login_at' => '?datetime',
+		'created_at'    => '?datetime',
+		'updated_at'    => '?datetime',
+		'deleted_at'    => '?datetime'
 	];
 
 	/**
@@ -47,6 +52,8 @@ class Account extends Entity
 	{
 		if (!isset($this->attributes['password']) || empty($this->attributes['password']))
 			return false;
-		return $password === \Config\Services::encrypter()->decrypt(base64_decode($this->attributes['password']));
+
+		$encryption = new \App\Libraries\Encryption();
+		return $encryption->checkPassword($password, $this->attributes['password']);
 	}
 }

@@ -1,5 +1,6 @@
 <?php namespace Config;
 
+use App\Entities\Account as eAccount;
 use App\Libraries\Html;
 use CodeIgniter\Config\Services as CoreServices;
 use CodeIgniter\Config\BaseConfig;
@@ -31,6 +32,30 @@ class Services extends CoreServices
 	//
 	//        return new \CodeIgniter\Example();
 	//    }
+
+	/**
+	 * account
+	 *
+	 * @param   bool    $getShared
+	 *
+	 * @return  eAccount
+	 */
+	public static function account(bool $getShared = true): eAccount
+	{
+		if ($getShared)
+			return static::getSharedInstance('account');
+
+		if ($accountID = session()->get('account_id'))
+		{
+			$mAccount = new \App\Models\Account();
+			$eAccount = $mAccount->find($accountID);
+		}
+
+		if (!isset($eAccount))
+			$eAccount = new eAccount();
+
+		return $eAccount;
+	}
 
 	/**
 	 * html

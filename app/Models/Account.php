@@ -21,7 +21,7 @@ class Account extends BaseModel
 	 * @var array $allowedFields
 	 */
 	protected $allowedFields = [
-		'username', 'password'
+		'username', 'password', 'name', 'last_login_at'
 	];
 
 	/**
@@ -42,17 +42,27 @@ class Account extends BaseModel
 	/**
 	 * @var string $createdField
 	 */
-	protected $createdField = 'reg_timestamp';
+	protected $createdField = 'created_at';
 
 	/**
 	 * @var string $updatedField
 	 */
-	protected $updatedField = 'mod_timestamp';
+	protected $updatedField = 'updated_at';
 
 	/**
 	 * @var string $deletedField
 	 */
-	protected $deletedField = 'del_timestamp';
+	protected $deletedField = 'deleted_at';
+
+	/**
+	 * @var bool $cache
+	 */
+	protected $cache = true;
+
+	/**
+	 * @var int $cacheTTL
+	 */
+	protected $cacheTTL = 1;
 
 	/**
 	 * @var array $beforeInsert
@@ -78,7 +88,10 @@ class Account extends BaseModel
 	protected function hashPassword(array $data): array
 	{
 		if (isset($data['data']['password']))
-			$data['data']['password'] = base64_encode(\Config\Services::encrypter()->encrypt($data['data']['password']));
+		{
+			$encryption = new \App\Libraries\Encryption();
+			$data['data']['password'] = $encryption->encodePassword($data['data']['password']);
+		}
 		return $data;
 	}
 }

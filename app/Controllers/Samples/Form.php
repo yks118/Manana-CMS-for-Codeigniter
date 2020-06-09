@@ -1,7 +1,5 @@
 <?php namespace App\Controllers\Samples;
 
-use App\Controllers\BaseController;
-
 /**
  * Class Form
  *

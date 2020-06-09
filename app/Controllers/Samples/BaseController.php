@@ -1,5 +1,5 @@
 <?php
-namespace App\Controllers;
+namespace App\Controllers\Samples;
 
 /**
  * Class BaseController
@@ -32,7 +32,6 @@ class BaseController extends Controller
 		'form',
 		'html',
 
-		'account',
 		'common'
 	];
 
@@ -62,7 +61,7 @@ class BaseController extends Controller
 
 		// set theme
 		$this->theme = new Theme();
-		$this->theme->setTheme(new \App\Libraries\Theme\BlackDashboard());
+		$this->theme->setTheme(new \App\Libraries\Theme\Basic());
 
 		// set html
 		$this->html = \Config\Services::html();
@@ -70,10 +69,8 @@ class BaseController extends Controller
 			->html
 			->addTitle('CMS Manana')
 			->setCss($this->theme->getCss())
-			->addCss('https://cdn.manana.kr/cms.manana.kr/css/common.min.css')
 			->setJs($this->theme->getJs('header'), 'header')
 			->setJs($this->theme->getJs('footer'), 'footer')
-			->addJs('https://cdn.manana.kr/cms.manana.kr/js/common.min.js')
 		;
 
 		// set response content type

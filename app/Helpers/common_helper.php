@@ -35,3 +35,18 @@ if (!function_usable('cdn_url'))
 			return $path;
 	}
 }
+
+if (!function_usable('show_javascript'))
+{
+	/**
+	 * show_javascript
+	 *
+	 * @param   string  $js
+	 *
+	 * @return  void
+	 */
+	function show_javascript(string $js): void
+	{
+		\Config\Services::response()->appendBody('<script type="text/javascript">' . $js . '</script>');
+	}
+}
