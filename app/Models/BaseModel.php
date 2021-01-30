@@ -109,7 +109,10 @@ class BaseModel extends Model
 			{
 				$result = cache()->get($cacheKey);
 				if (is_null($result) === false)
+				{
+					$this->resetQuery();
 					return $result;
+				}
 			}
 		}
 
@@ -138,7 +141,10 @@ class BaseModel extends Model
 			{
 				$result = cache()->get($cacheKey);
 				if (is_null($result) === false)
+				{
+					$this->resetQuery();
 					return $result;
+				}
 			}
 		}
 
@@ -167,7 +173,10 @@ class BaseModel extends Model
 			{
 				$result = cache()->get($cacheKey);
 				if (is_null($result) === false)
+				{
+					$this->resetQuery();
 					return $result;
+				}
 			}
 		}
 
@@ -321,5 +330,35 @@ class BaseModel extends Model
 		$result = parent::replace($data, $returnSQL);
 		$this->db->connID = $connID;
 		return $result;
+	}
+
+	/**
+	 * paginate
+	 *
+	 * @param ?int      $perPage
+	 * @param string    $group
+	 * @param ?int      $page
+	 * @param int       $segment
+	 *
+	 * @return ?array
+	 */
+	public function paginate(int $perPage = null, string $group = 'default', int $page = null, int $segment = 0): ?array
+	{
+		$config = new \Config\Pager();
+		$config->templates['theme'] = \Config\Services::html()->getThemeName() . '/layout/pagination';
+		$pager = \Config\Services::pager($config, null, false);
+
+		if ($segment)
+			$pager->setSegment($segment);
+
+		$page = $page >= 1 ? $page : $pager->getCurrentPage($group);
+
+		$total = $this->countAllResults(false);
+
+		$this->pager = $pager->store($group, $page, $perPage, $total, $segment);
+		$perPage     = $this->pager->getPerPage($group);
+		$offset      = ($page - 1) * $perPage;
+
+		return $this->findAll($perPage, $offset);
 	}
 }
