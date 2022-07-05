@@ -1,6 +1,8 @@
 <?php namespace App\Models;
 
+use CodeIgniter\Database\ConnectionInterface;
 use CodeIgniter\Model;
+use CodeIgniter\Validation\ValidationInterface;
 
 /**
  * Class BaseModel
@@ -39,6 +41,18 @@ class BaseModel extends Model
 	 */
 	protected $replicationConnID;
 
+    public function __construct(?ConnectionInterface &$db = null, ?ValidationInterface $validation = null)
+    {
+        parent::__construct($db, $validation);
+
+        if (is_cli())
+        {
+            $this->cache = false;
+            $this->cacheRefresh = true;
+            $this->cacheTTL = 0;
+        }
+    }
+
 	/**
 	 * getCacheKey
 	 *
@@ -70,7 +84,7 @@ class BaseModel extends Model
 
 		$db = db_connect($this->replicationGroup);
 		$db->initialize();
-		return $db->connID;
+		return $this->replicationConnID = $db->connID;
 	}
 
 	/**
@@ -96,30 +110,41 @@ class BaseModel extends Model
 	 * find
 	 *
 	 * @param   mixed|array|null    $id One primary key or an array of primary keys
+     * @param   bool                $master
 	 *
 	 * @return  array|object|null   The resulting row of data, or null.
 	 */
-	public function find($id = null)
+	public function find($id = null, bool $master = false)
 	{
-		if ($this->cache)
-		{
-			$cacheKey = $this->getCacheKey('id_' . $id);
+        if ($this->cache)
+        {
+            $cacheKey = $this->getCacheKey('id_' . $id);
 
-			if ($this->cacheRefresh === false)
-			{
-				$result = cache()->get($cacheKey);
-				if (is_null($result) === false)
-				{
-					$this->resetQuery();
-					return $result;
-				}
-			}
-		}
+            if ($this->cacheRefresh === false)
+            {
+                $result = cache()->get($cacheKey);
+                if (is_null($result) === false)
+                {
+                    $this->resetQuery();
+                    return $result;
+                }
+            }
+        }
 
-		$result = parent::find($id);
+        if ($master === true)
+        {
+            $connID = $this->db->connID;
+            $this->db->connID = $this->getReplicationConnID();
+            $result = parent::find($id);
+            $this->db->connID = $connID;
+        }
+        else
+        {
+            $result = parent::find($id);
+        }
+
 		if ($this->cache && isset($cacheKey))
 			cache()->save($cacheKey, $result, $this->cacheTTL);
-
 		return $result;
 	}
 
@@ -127,31 +152,42 @@ class BaseModel extends Model
 	 * findColumn
 	 *
 	 * @param   string  $columnName
+     * @param   bool    $master
 	 *
 	 * @return  array|null  The resulting row of data, or null if no data found.
 	 * @throws  \CodeIgniter\Database\Exceptions\DataException
 	 */
-	public function findColumn(string $columnName)
+	public function findColumn(string $columnName, bool $master = false)
 	{
-		if ($this->cache)
-		{
-			$cacheKey = $this->getCacheKey('columnName_' . $columnName);
+        if ($this->cache)
+        {
+            $cacheKey = $this->getCacheKey('columnName_' . $columnName);
 
-			if ($this->cacheRefresh === false)
-			{
-				$result = cache()->get($cacheKey);
-				if (is_null($result) === false)
-				{
-					$this->resetQuery();
-					return $result;
-				}
-			}
-		}
+            if ($this->cacheRefresh === false)
+            {
+                $result = cache()->get($cacheKey);
+                if (is_null($result) === false)
+                {
+                    $this->resetQuery();
+                    return $result;
+                }
+            }
+        }
 
-		$result = parent::findColumn($columnName);
+        if ($master === true)
+        {
+            $connID = $this->db->connID;
+            $this->db->connID = $this->getReplicationConnID();
+            $result = parent::findColumn($columnName);
+            $this->db->connID = $connID;
+        }
+        else
+        {
+            $result = parent::findColumn($columnName);
+        }
+
 		if ($this->cache && isset($cacheKey))
 			cache()->save($cacheKey, $result, $this->cacheTTL);
-
 		return $result;
 	}
 
@@ -160,30 +196,41 @@ class BaseModel extends Model
 	 *
 	 * @param   int     $limit
 	 * @param   int     $offset
+     * @param   bool    $master
 	 *
 	 * @return  array|null
 	 */
-	public function findAll(int $limit = 0, int $offset = 0)
+	public function findAll(int $limit = 0, int $offset = 0, bool $master = false)
 	{
-		if ($this->cache)
-		{
-			$cacheKey = $this->getCacheKey('limit_' . $limit . '_offset_' . $offset);
+        if ($this->cache)
+        {
+            $cacheKey = $this->getCacheKey('limit_' . $limit . '_offset_' . $offset);
 
-			if ($this->cacheRefresh === false)
-			{
-				$result = cache()->get($cacheKey);
-				if (is_null($result) === false)
-				{
-					$this->resetQuery();
-					return $result;
-				}
-			}
-		}
+            if ($this->cacheRefresh === false)
+            {
+                $result = cache()->get($cacheKey);
+                if (is_null($result) === false)
+                {
+                    $this->resetQuery();
+                    return $result;
+                }
+            }
+        }
 
-		$result = parent::findAll($limit, $offset);
+        if ($master === true)
+        {
+            $connID = $this->db->connID;
+            $this->db->connID = $this->getReplicationConnID();
+            $result = parent::findAll($limit, $offset);
+            $this->db->connID = $connID;
+        }
+        else
+        {
+            $result = parent::findAll($limit, $offset);
+        }
+
 		if ($this->cache && isset($cacheKey))
 			cache()->save($cacheKey, $result, $this->cacheTTL);
-
 		return $result;
 	}
 
